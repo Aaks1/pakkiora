@@ -378,7 +378,7 @@ def doctor_edit(request, doctor_id):
     doctor = get_object_or_404(Doctor, id=doctor_id)
     
     if request.method == 'POST':
-        form = DoctorForm(request.POST, request.FILES, instance=doctor)
+        form = DoctorForm(request.POST, instance=doctor)
         if form.is_valid():
             form.save()
             safe_message(request, 'success', f'Dr. {doctor.first_name} {doctor.last_name} updated successfully!')

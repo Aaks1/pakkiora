@@ -4,19 +4,20 @@ from django.contrib import messages
 from django.utils import timezone
 from django.views.generic import ListView, DetailView
 from django.urls import reverse
+from django.db import models
 from doctors.models import Doctor, AppointmentSlot
 from .models import Appointment
 from .forms import AppointmentForm, BookAppointmentForm
 
 @login_required
 def patient_dashboard(request):
-    """Patient dashboard with overview"""
+    """Patient dashboard with optimized queries"""
     user = request.user
     
     # Get or create patient profile
     from doctors.models import Patient
     try:
-        patient = Patient.objects.get(user=user)
+        patient = Patient.objects.select_related('user').get(user=user)
     except Patient.DoesNotExist:
         # Create patient profile if it doesn't exist
         patient = Patient.objects.create(
@@ -26,35 +27,28 @@ def patient_dashboard(request):
             email=user.email
         )
     
-    # Get patient's appointments
-    upcoming_appointments = Appointment.objects.filter(
-        patient=user, 
-        date__gte=timezone.now().date(),
-        status='BOOKED'
-    ).select_related('doctor').order_by('date', 'start_time')
+    # Optimized queries with single database hit
+    today = timezone.now().date()
     
-    past_appointments = Appointment.objects.filter(
-        patient=user,
-        date__lt=timezone.now().date()
-    ).select_related('doctor').order_by('-date', '-start_time')[:5]
+    # Get all appointments in one query
+    all_appointments = Appointment.objects.filter(
+        patient=user
+    ).select_related('doctor').order_by('-date', '-start_time')
     
-    # Get available doctors
-    doctors = Doctor.objects.filter(is_active=True)
+    # Separate upcoming and past appointments
+    upcoming_appointments = [apt for apt in all_appointments if apt.date >= today and apt.status == 'BOOKED']
+    past_appointments = [apt for apt in all_appointments if apt.date < today][:5]
     
-    # Get specializations for filtering
-    specializations = list(doctors.values_list('specialization', flat=True).distinct())
+    # Get available doctors with prefetch
+    doctors = Doctor.objects.filter(is_active=True).only('id', 'first_name', 'last_name', 'specialization')
     
-    # Get available slots for today
-    from doctors.models import AppointmentSlot
-    available_today = AppointmentSlot.objects.filter(
-        date=timezone.now().date(),
-        is_booked=False
-    ).count()
+    # Get specializations efficiently
+    specializations = list(set(doctor.specialization for doctor in doctors))
     
-    # Calculate statistics
-    total_appointments = Appointment.objects.filter(patient=user).count()
-    upcoming_count = upcoming_appointments.count()
-    past_count = past_appointments.count()
+    # Simplified statistics
+    total_appointments = len(all_appointments)
+    upcoming_count = len(upcoming_appointments)
+    past_count = len(past_appointments)
     
     context = {
         'user': user,
@@ -200,28 +194,20 @@ def book_appointment(request, doctor_id, date, start_time):
             # Use database transaction for atomic operation
             try:
                 with transaction.atomic():
-                    # Check if slot is already booked (SELECT FOR UPDATE to lock the row)
-                    existing_appointment = Appointment.objects.select_for_update().filter(
-                        doctor=doctor,
+                    # Quick conflict check with single query
+                    conflicts = Appointment.objects.select_for_update().filter(
                         date=appointment_date,
                         start_time=appointment_time,
                         status='BOOKED'
+                    ).filter(
+                        models.Q(doctor=doctor) | models.Q(patient=request.user)
                     ).first()
                     
-                    if existing_appointment:
-                        messages.error(request, 'This time slot is already booked. Please choose another time.')
-                        return redirect('patient:doctor_detail', doctor_id=doctor_id)
-                    
-                    # Check if patient already has an appointment at this time
-                    patient_conflict = Appointment.objects.select_for_update().filter(
-                        patient=request.user,
-                        date=appointment_date,
-                        start_time=appointment_time,
-                        status='BOOKED'
-                    ).first()
-                    
-                    if patient_conflict:
-                        messages.error(request, 'You already have an appointment at this time.')
+                    if conflicts:
+                        if conflicts.doctor == doctor:
+                            messages.error(request, 'This time slot is already booked. Please choose another time.')
+                        else:
+                            messages.error(request, 'You already have an appointment at this time.')
                         return redirect('patient:doctor_detail', doctor_id=doctor_id)
                     
                     # Create the appointment
