@@ -6,6 +6,13 @@ import sys
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, project_root)
 
+# Load environment variables from .env file (critical for Vercel)
+try:
+    from dotenv import load_dotenv
+    load_dotenv(os.path.join(project_root, '.env'))
+except ImportError:
+    pass  # dotenv not available, continue without it
+
 # Set Django settings module
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'DoctorX.settings')
 
