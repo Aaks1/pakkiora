@@ -355,11 +355,11 @@
                                                 <i class="fas fa-play"></i>
                                             </a>
                                         {% endif %}
-                                        <a href="{% url 'doctor_delete' doctor.id %}" 
+                                        <button onclick="confirmDelete({{ doctor.id }}, '{{ doctor.first_name }} {{ doctor.last_name }}')" 
                                            class="text-red-600 hover:text-red-900 transition-colors"
                                            title="Delete Doctor">
                                             <i class="fas fa-trash"></i>
-                                        </a>
+                                        </button>
                                     </div>
                                 </td>
                             </tr>
@@ -426,6 +426,119 @@
     {% endif %}
     </main>
 </div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-lg bg-white">
+        <div class="mt-3 text-center">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                <i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>
+            </div>
+            <h3 class="text-lg leading-6 font-medium text-gray-900">Delete Doctor</h3>
+            <div class="mt-2 px-7 py-3">
+                <p class="text-sm text-gray-500">
+                    Are you sure you want to delete <strong id="doctorName"></strong>? This action cannot be undone.
+                </p>
+            </div>
+            <div class="items-center px-4 py-3">
+                <button id="cancelDelete" 
+                        class="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition-colors mr-2">
+                    Cancel
+                </button>
+                <button id="confirmDelete" 
+                        class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                    Delete
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmDelete(doctorId, doctorName) {
+    document.getElementById('doctorName').textContent = `Dr. ${doctorName}`;
+    document.getElementById('deleteModal').classList.remove('hidden');
+    
+    // Set up confirm button
+    document.getElementById('confirmDelete').onclick = function() {
+        fetch(`/admin-dashboard/doctors/${doctorId}/delete/`, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Show success message
+                showMessage('success', data.message);
+                // Close modal
+                document.getElementById('deleteModal').classList.add('hidden');
+                // Reload page to update list
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+            } else {
+                showMessage('error', data.message || 'Error deleting doctor');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showMessage('error', 'An error occurred while deleting the doctor');
+        });
+    };
+}
+
+// Cancel button
+document.getElementById('cancelDelete').onclick = function() {
+    document.getElementById('deleteModal').classList.add('hidden');
+};
+
+// Close modal when clicking outside
+document.getElementById('deleteModal').onclick = function(e) {
+    if (e.target === this) {
+        this.classList.add('hidden');
+    }
+};
+
+// Helper function to get CSRF token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Simple message display function
+function showMessage(type, message) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 ${
+        type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+    }`;
+    messageDiv.innerHTML = `
+        <div class="flex items-center">
+            <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'} mr-2"></i>
+            ${message}
+        </div>
+    `;
+    document.body.appendChild(messageDiv);
+    
+    // Remove message after 3 seconds
+    setTimeout(() => {
+        messageDiv.remove();
+    }, 3000);
+}
+</script>
 
 </body>
 </html>

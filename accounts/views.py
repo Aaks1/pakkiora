@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.http import JsonResponse
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
@@ -392,15 +393,18 @@ def doctor_edit(request, doctor_id):
 @user_passes_test(check_is_admin)
 def doctor_delete(request, doctor_id):
     """Delete doctor"""
-    doctor = get_object_or_404(Doctor, id=doctor_id)
-    
     if request.method == 'POST':
+        doctor = get_object_or_404(Doctor, id=doctor_id)
         doctor_name = f"Dr. {doctor.first_name} {doctor.last_name}"
         doctor.delete()
-        safe_message(request, 'success', f'{doctor_name} deleted successfully!')
-        return redirect('doctor_list')
+        
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'success': True, 'message': f'{doctor_name} deleted successfully!'})
+        else:
+            safe_message(request, 'success', f'{doctor_name} deleted successfully!')
+            return redirect('doctor_list')
     
-    return render(request, 'admin/doctor_delete.html', {'doctor': doctor, 'user': request.user})
+    return JsonResponse({'success': False, 'message': 'Invalid request method'}, status=400)
 
 @login_required
 @user_passes_test(check_is_admin)
