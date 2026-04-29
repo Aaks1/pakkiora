@@ -31,21 +31,23 @@ def login_view(request):
         
         user = authenticate(request, username=username, password=password)
         if user is not None:
+            login(request, user)
+            
             # Check if user has a patient profile (for regular users)
             try:
                 patient = Patient.objects.get(user=user)
-                login(request, user)
                 messages.success(request, f'Welcome back, {patient.first_name}!')
                 return redirect('accounts:patient_dashboard')
             except Patient.DoesNotExist:
                 # If no patient profile, check if it's an admin/staff user
-                if hasattr(user, 'is_staff') and user.is_staff:
-                    login(request, user)
+                if user.is_staff:
                     return redirect('admin_dashboard')
                 else:
-                    messages.error(request, 'No patient profile found. Please register as a patient.')
-            except Exception:
-                messages.error(request, 'Login error. Please try again.')
+                    # Regular user without patient profile - create one or redirect to register
+                    messages.error(request, 'No patient profile found. Please complete your registration.')
+                    return redirect('accounts:register')
+            except Exception as e:
+                messages.error(request, f'Login error: {str(e)}')
         else:
             messages.error(request, 'Invalid username or password.')
     
