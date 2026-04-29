@@ -461,15 +461,24 @@ function confirmDelete(doctorId, doctorName) {
     
     // Set up confirm button
     document.getElementById('confirmDelete').onclick = function() {
+        // Disable button to prevent double clicks
+        this.disabled = true;
+        this.textContent = 'Deleting...';
+        
         fetch(`/admin-dashboard/doctors/${doctorId}/delete/`, {
             method: 'POST',
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
-                'Content-Type': 'application/json',
                 'X-CSRFToken': getCookie('csrftoken')
-            }
+            },
+            body: new FormData() // Empty form data for Django POST
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
                 // Show success message
@@ -482,11 +491,18 @@ function confirmDelete(doctorId, doctorName) {
                 }, 1500);
             } else {
                 showMessage('error', data.message || 'Error deleting doctor');
+                // Re-enable button
+                this.disabled = false;
+                this.textContent = 'Delete';
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            showMessage('error', 'An error occurred while deleting the doctor');
+            console.error('Error details:', error.message);
+            showMessage('error', 'An error occurred while deleting the doctor. Please check the console for details.');
+            // Re-enable button
+            this.disabled = false;
+            this.textContent = 'Delete';
         });
     };
 }
