@@ -73,16 +73,19 @@ WSGI_APPLICATION = 'DoctorX.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-# Dual Database Configuration - Neon for Production, SQLite for Development
+# Database Configuration - Neon PostgreSQL with Environment Variables
 import dj_database_url
 
-if os.environ.get('USE_NEON') == 'true':
-    # Use Neon PostgreSQL for production
+# Get database URL from environment variable or use SQLite for development
+DATABASE_URL = os.environ.get('DATABASE_URL')
+
+if DATABASE_URL:
+    # Use Neon PostgreSQL for production (DATABASE_URL is set)
     DATABASES = {
-        'default': dj_database_url.parse('postgresql://neondb_owner:npg_T0YBXCPNQ3Hk@ep-misty-surf-a7k9k9ds-pooler.ap-southeast-2.aws.neon.tech/neondb?channel_binding=require&sslmode=require')
+        'default': dj_database_url.parse(DATABASE_URL)
     }
 else:
-    # Use SQLite for development
+    # Use SQLite for development (no DATABASE_URL)
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
