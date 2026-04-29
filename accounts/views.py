@@ -11,6 +11,21 @@ from appointments.models import Appointment
 from .forms import UserRegistrationForm, AdminUserForm
 from doctors.forms import DoctorForm, DoctorScheduleForm
 
+def safe_message(request, level, message):
+    """Safe message handling for serverless environments"""
+    try:
+        if level == 'success':
+            messages.success(request, message)
+        elif level == 'error':
+            messages.error(request, message)
+        elif level == 'warning':
+            messages.warning(request, message)
+        elif level == 'info':
+            messages.info(request, message)
+    except Exception:
+        # Silently fail if messages middleware is not available
+        pass
+
 def home(request):
     """Render to landing page"""
     return render(request, 'index.html')
@@ -21,8 +36,11 @@ from django.views.decorators.csrf import csrf_protect
 def login_view(request):
     """Handle user login"""
     # Clear any existing messages to prevent Django default messages
-    storage = messages.get_messages(request)
-    storage.used = True
+    try:
+        storage = messages.get_messages(request)
+        storage.used = True
+    except Exception:
+        pass  # Messages middleware not available
     
     if request.method == 'POST':
         from django.contrib.auth import authenticate
@@ -36,7 +54,7 @@ def login_view(request):
             # Check if user has a patient profile (for regular users)
             try:
                 patient = Patient.objects.get(user=user)
-                messages.success(request, f'Welcome back, {patient.first_name}!')
+                safe_message(request, 'success', f'Welcome back, {patient.first_name}!')
                 return redirect('accounts:patient_dashboard')
             except Patient.DoesNotExist:
                 # If no patient profile, check if it's an admin/staff user
@@ -44,12 +62,12 @@ def login_view(request):
                     return redirect('admin_dashboard')
                 else:
                     # Regular user without patient profile - create one or redirect to register
-                    messages.error(request, 'No patient profile found. Please complete your registration.')
+                    safe_message(request, 'error', 'No patient profile found. Please complete your registration.')
                     return redirect('accounts:register')
             except Exception as e:
-                messages.error(request, f'Login error: {str(e)}')
+                safe_message(request, 'error', f'Login error: {str(e)}')
         else:
-            messages.error(request, 'Invalid username or password.')
+            safe_message(request, 'error', 'Invalid username or password.')
     
     return render(request, 'login.html')
 
@@ -74,14 +92,14 @@ def register_view(request):
                     medical_history=form.cleaned_data.get('medical_conditions', '')
                 )
                 
-                messages.success(request, 'Registration successful! Please login.')
+                safe_message(request, 'success', 'Registration successful! Please login.')
                 return redirect('accounts:login')
                 
             except Exception as e:
                 # Delete the user if patient creation fails
                 if 'user' in locals():
                     user.delete()
-                messages.error(request, f'Error creating patient profile: {str(e)}')
+                safe_message(request, 'error', f'Error creating patient profile: {str(e)}')
                 return render(request, 'register.html', {'form': form})
     else:
         form = UserRegistrationForm()
@@ -115,7 +133,7 @@ def profile_view(request):
         profile.medical_conditions = request.POST.get('medical_conditions', '')
         profile.save()
         
-        messages.success(request, 'Profile updated successfully!')
+        safe_message(request, 'success', 'Profile updated successfully!')
         return redirect('accounts:profile')
     
     return render(request, 'profile.html', {'profile': profile})
@@ -125,7 +143,7 @@ def logout_view(request):
     """Handle user logout"""
     if request.method == 'POST':
         logout(request)
-        messages.success(request, 'You have been logged out successfully.')
+        safe_message(request, 'success', 'You have been logged out successfully.')
     return redirect('accounts:login')
 
 @login_required
@@ -138,7 +156,7 @@ def patient_dashboard(request):
     try:
         patient = Patient.objects.get(user=request.user)
     except Patient.DoesNotExist:
-        messages.error(request, 'Patient profile not found. Please register as a patient.')
+        safe_message(request, 'error', 'Patient profile not found. Please register as a patient.')
         return redirect('accounts:login')
     
     # Get available doctors
@@ -228,15 +246,15 @@ def admin_create(request):
                     department=form.cleaned_data.get('department', '')
                 )
                 
-                messages.success(request, f'Admin {user.username} created successfully!')
+                safe_message(request, 'success', f'Admin {user.username} created successfully!')
                 return redirect('admin_dashboard')
             except Exception as e:
-                messages.error(request, f'Error creating admin: {str(e)}')
+                safe_message(request, 'error', f'Error creating admin: {str(e)}')
         else:
             # Form is not valid, show errors
             for field, errors in form.errors.items():
                 for error in errors:
-                    messages.error(request, f'{field}: {error}')
+                    safe_message(request, 'error', f'{field}: {error}')
     else:
         form = AdminUserForm()
     
@@ -266,7 +284,7 @@ def admin_edit(request, admin_id):
                     department=form.cleaned_data.get('department', '')
                 )
             
-            messages.success(request, f'Admin {admin.username} updated successfully!')
+            safe_message(request, 'success', f'Admin {admin.username} updated successfully!')
             return redirect('admin_list')
     else:
         form = AdminUserForm(instance=admin)
@@ -292,21 +310,21 @@ def admin_delete(request, admin_id):
         
         # Validation checks
         if not confirm_delete:
-            messages.error(request, 'You must confirm the deletion.')
+            safe_message(request, 'error', 'You must confirm the deletion.')
             return render(request, 'admin/admin_delete.html', {'admin': admin})
         
         if confirm_username != admin.username:
-            messages.error(request, 'Username confirmation does not match.')
+            safe_message(request, 'error', 'Username confirmation does not match.')
             return render(request, 'admin/admin_delete.html', {'admin': admin})
         
         # Prevent self-deletion
         if admin.id == request.user.id:
-            messages.error(request, 'You cannot delete your own account.')
+            safe_message(request, 'error', 'You cannot delete your own account.')
             return render(request, 'admin/admin_delete.html', {'admin': admin})
         
         username = admin.username
         admin.delete()
-        messages.success(request, f'Admin {username} deleted successfully!')
+        safe_message(request, 'success', f'Admin {username} deleted successfully!')
         return redirect('admin_list')
     
     return render(request, 'admin/admin_delete.html', {'admin': admin})
@@ -340,13 +358,13 @@ def doctor_create(request):
             # Create doctor profile without user account
             doctor = form.save()
             
-            messages.success(request, f'Dr. {doctor.first_name} {doctor.last_name} created successfully!')
+            safe_message(request, 'success', f'Dr. {doctor.first_name} {doctor.last_name} created successfully!')
             return redirect('admin_dashboard')
         else:
             # Form is not valid, show errors
             for field, errors in form.errors.items():
                 for error in errors:
-                    messages.error(request, f'{field}: {error}')
+                    safe_message(request, 'error', f'{field}: {error}')
     else:
         form = DoctorForm()
     
@@ -362,7 +380,7 @@ def doctor_edit(request, doctor_id):
         form = DoctorForm(request.POST, request.FILES, instance=doctor)
         if form.is_valid():
             form.save()
-            messages.success(request, f'Dr. {doctor.first_name} {doctor.last_name} updated successfully!')
+            safe_message(request, 'success', f'Dr. {doctor.first_name} {doctor.last_name} updated successfully!')
             return redirect('doctor_list')
     else:
         form = DoctorForm(instance=doctor)
@@ -378,7 +396,7 @@ def doctor_delete(request, doctor_id):
     if request.method == 'POST':
         doctor_name = f"Dr. {doctor.first_name} {doctor.last_name}"
         doctor.delete()
-        messages.success(request, f'{doctor_name} deleted successfully!')
+        safe_message(request, 'success', f'{doctor_name} deleted successfully!')
         return redirect('doctor_list')
     
     return render(request, 'admin/doctor_delete.html', {'doctor': doctor})
@@ -392,7 +410,7 @@ def doctor_toggle_active(request, doctor_id):
     doctor.save()
     
     status = "activated" if doctor.is_active else "deactivated"
-    messages.success(request, f'Dr. {doctor.first_name} {doctor.last_name} {status} successfully!')
+    safe_message(request, 'success', f'Dr. {doctor.first_name} {doctor.last_name} {status} successfully!')
     return redirect('doctor_list')
 
 
@@ -421,7 +439,7 @@ def doctor_schedule_create(request, doctor_id):
             schedule = form.save(commit=False)
             schedule.doctor = doctor
             schedule.save()
-            messages.success(request, f'Schedule created for Dr. {doctor.first_name} {doctor.last_name}!')
+            safe_message(request, 'success', f'Schedule created for Dr. {doctor.first_name} {doctor.last_name}!')
             return redirect('doctor_schedule_list', doctor_id=doctor_id)
     else:
         form = DoctorScheduleForm(doctor=doctor)
@@ -444,7 +462,7 @@ def doctor_schedule_edit(request, doctor_id, schedule_id):
         form = DoctorScheduleForm(request.POST, instance=schedule, doctor=doctor)
         if form.is_valid():
             form.save()
-            messages.success(request, f'Schedule updated for Dr. {doctor.first_name} {doctor.last_name}!')
+            safe_message(request, 'success', f'Schedule updated for Dr. {doctor.first_name} {doctor.last_name}!')
             return redirect('doctor_schedule_list', doctor_id=doctor_id)
     else:
         form = DoctorScheduleForm(instance=schedule, doctor=doctor)
@@ -466,7 +484,7 @@ def doctor_schedule_delete(request, doctor_id, schedule_id):
     
     if request.method == 'POST':
         schedule.delete()
-        messages.success(request, f'Schedule deleted for Dr. {doctor.first_name} {doctor.last_name}!')
+        safe_message(request, 'success', f'Schedule deleted for Dr. {doctor.first_name} {doctor.last_name}!')
         return redirect('doctor_schedule_list', doctor_id=doctor_id)
     
     return render(request, 'admin/doctor_schedule_delete.html', {
@@ -486,7 +504,7 @@ def doctor_schedule_toggle(request, doctor_id, schedule_id):
     schedule.save()
     
     status = "activated" if schedule.is_active else "deactivated"
-    messages.success(request, f'Schedule {status} for Dr. {doctor.first_name} {doctor.last_name}!')
+    safe_message(request, 'success', f'Schedule {status} for Dr. {doctor.first_name} {doctor.last_name}!')
     return redirect('doctor_schedule_list', doctor_id=doctor_id)
 
 
@@ -552,7 +570,7 @@ def cancel_appointment_admin(request, appointment_id):
     if request.method == 'POST':
         appointment.status = 'CANCELLED'
         appointment.save()
-        messages.success(request, f'Appointment for {appointment.patient.username} with Dr. {appointment.doctor.first_name} has been cancelled.')
+        safe_message(request, 'success', f'Appointment for {appointment.patient.username} with Dr. {appointment.doctor.first_name} has been cancelled.')
         return redirect('admin_appointment_management')
     
     context = {
