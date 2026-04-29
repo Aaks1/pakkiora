@@ -172,12 +172,12 @@
         <div class="flex flex-col sm:flex-row gap-4 sm:gap-6">
           {% if user.is_authenticated %}
             {% if user.is_staff %}
-              <a href="{% url 'admin_dashboard' %}" class="btn-primary-custom text-white px-6 py-3 rounded-xl font-medium inline-flex items-center shadow-lg">
+              <a href="{% url 'admin_dashboard' %}" class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-xl font-medium inline-flex items-center shadow-lg hover:shadow-xl hover:from-indigo-700 hover:to-purple-700 transform hover:-translate-y-1 transition-all duration-300">
                 <i class="fas fa-tachometer-alt mr-2"></i>
                 Dashboard
               </a>
             {% else %}
-              <a href="{% url 'accounts:patient_dashboard' %}" class="btn-primary-custom text-white px-6 py-3 rounded-xl font-medium inline-flex items-center shadow-lg">
+              <a href="{% url 'accounts:patient_dashboard' %}" class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-xl font-medium inline-flex items-center shadow-lg hover:shadow-xl hover:from-indigo-700 hover:to-purple-700 transform hover:-translate-y-1 transition-all duration-300">
                 <i class="fas fa-calendar-plus mr-2"></i>
                 Find a Doctor
               </a>
@@ -187,8 +187,8 @@
               </a>
             {% endif %}
           {% else %}
-            <a href="{% url 'accounts:login' %}" class="btn-primary-custom text-white px-6 py-3 rounded-xl font-medium inline-flex items-center shadow-lg">
-              <i class="fas fa-sign-in-alt mr-2"></i>
+            <a href="{% url 'accounts:login' %}" class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-4 rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl hover:from-indigo-700 hover:to-purple-700 transform hover:-translate-y-1 transition-all duration-300 inline-flex items-center">
+              <i class="fas fa-sign-in-alt mr-3"></i>
               Get Started
             </a>
             <a href="{% url 'accounts:register' %}" class="bg-white text-gray-700 px-6 py-3 rounded-xl font-medium inline-flex items-center shadow-lg hover:bg-gray-50 transition-all border border-gray-200">
