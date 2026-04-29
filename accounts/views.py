@@ -397,14 +397,11 @@ def doctor_delete(request, doctor_id):
         doctor = get_object_or_404(Doctor, id=doctor_id)
         doctor_name = f"Dr. {doctor.first_name} {doctor.last_name}"
         doctor.delete()
-        
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return JsonResponse({'success': True, 'message': f'{doctor_name} deleted successfully!'})
-        else:
-            safe_message(request, 'success', f'{doctor_name} deleted successfully!')
-            return redirect('doctor_list')
+        safe_message(request, 'success', f'{doctor_name} deleted successfully!')
+        return redirect('doctor_list')
     
-    return JsonResponse({'success': False, 'message': 'Invalid request method'}, status=400)
+    # Redirect to doctor list if not POST
+    return redirect('doctor_list')
 
 @login_required
 @user_passes_test(check_is_admin)
