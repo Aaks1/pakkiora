@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Piki Ora - Modern Healthcare Management</title>
+    <title>DoctorX - Modern Healthcare Management</title>
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -21,6 +21,111 @@
     
     <!-- External CSS -->
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    
+    <!-- Custom CSS for Index Page -->
+    <style>
+        :root {
+            --primary-50: #eff6ff;
+            --primary-100: #dbeafe;
+            --primary-200: #bfdbfe;
+            --primary-300: #93c5fd;
+            --primary-400: #60a5fa;
+            --primary-500: #3b82f6;
+            --primary-600: #2563eb;
+            --primary-700: #1d4ed8;
+            --primary-800: #1e40af;
+            --primary-900: #1e3a8a;
+            
+            --secondary-50: #faf5ff;
+            --secondary-100: #f3e8ff;
+            --secondary-200: #e9d5ff;
+            --secondary-300: #d8b4fe;
+            --secondary-400: #c084fc;
+            --secondary-500: #a855f7;
+            --secondary-600: #9333ea;
+            --secondary-700: #7c3aed;
+            --secondary-800: #6b21a8;
+            --secondary-900: #581c87;
+        }
+        
+        .btn-primary-custom {
+            background: linear-gradient(135deg, var(--primary-600) 0%, var(--secondary-600) 100%) !important;
+            color: white !important;
+            padding: 12px 24px !important;
+            border-radius: 12px !important;
+            font-weight: 600 !important;
+            font-size: 16px !important;
+            border: none !important;
+            cursor: pointer !important;
+            transition: all 0.3s ease !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            text-decoration: none !important;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15) !important;
+        }
+        
+        .btn-primary-custom:hover {
+            background: linear-gradient(135deg, var(--primary-700) 0%, var(--secondary-700) 100%) !important;
+            transform: translateY(-2px) !important;
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.25) !important;
+        }
+        
+        .btn-primary-custom i {
+            color: white !important;
+            margin-right: 8px !important;
+        }
+        
+        .gradient-text {
+            background: linear-gradient(135deg, var(--primary-600) 0%, var(--secondary-600) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .hero-gradient {
+            background: linear-gradient(135deg, var(--primary-50) 0%, var(--secondary-50) 100%);
+        }
+        
+        .sticky-nav {
+            backdrop-filter: blur(20px);
+            background: rgba(255, 255, 255, 0.85);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+        
+        .organic-card {
+            border-radius: 20px;
+            background: linear-gradient(135deg, #ffffff 0%, #fafafa 100%);
+            border: 1px solid rgba(0, 0, 0, 0.03);
+            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        
+        .organic-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px -10px rgba(99, 102, 241, 0.2);
+        }
+        
+        .text-doctor-600 {
+            color: var(--primary-600);
+        }
+        
+        .border-doctor-200 {
+            border-color: var(--primary-200);
+        }
+        
+        .hover\:text-doctor-600:hover {
+            color: var(--primary-600);
+        }
+        
+        .hover\:text-doctor-700:hover {
+            color: var(--primary-700);
+        }
+        
+        .hover\:bg-doctor-50:hover {
+            background: var(--primary-50);
+        }
+    </style>
 </head>
 <body class="bg-gray-50">
 
@@ -172,13 +277,13 @@
         <div class="flex flex-col sm:flex-row gap-4 sm:gap-6">
           {% if user.is_authenticated %}
             {% if user.is_staff %}
-              <a href="{% url 'admin_dashboard' %}" class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-xl font-medium inline-flex items-center shadow-lg hover:shadow-xl hover:from-indigo-700 hover:to-purple-700 transform hover:-translate-y-1 transition-all duration-300">
-                <i class="fas fa-tachometer-alt mr-2"></i>
+              <a href="{% url 'admin_dashboard' %}" class="btn-primary-custom">
+                <i class="fas fa-tachometer-alt"></i>
                 Dashboard
               </a>
             {% else %}
-              <a href="{% url 'accounts:patient_dashboard' %}" class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-xl font-medium inline-flex items-center shadow-lg hover:shadow-xl hover:from-indigo-700 hover:to-purple-700 transform hover:-translate-y-1 transition-all duration-300">
-                <i class="fas fa-calendar-plus mr-2"></i>
+              <a href="{% url 'accounts:patient_dashboard' %}" class="btn-primary-custom">
+                <i class="fas fa-calendar-plus"></i>
                 Find a Doctor
               </a>
               <a href="{% url 'accounts:patient_dashboard' %}" class="bg-white text-gray-700 px-6 py-3 rounded-xl font-medium inline-flex items-center shadow-lg hover:bg-gray-50 transition-all border border-gray-200">
@@ -187,8 +292,8 @@
               </a>
             {% endif %}
           {% else %}
-            <a href="{% url 'accounts:login' %}" class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-4 rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl hover:from-indigo-700 hover:to-purple-700 transform hover:-translate-y-1 transition-all duration-300 inline-flex items-center">
-              <i class="fas fa-sign-in-alt mr-3"></i>
+            <a href="{% url 'accounts:login' %}" class="btn-primary-custom">
+              <i class="fas fa-sign-in-alt"></i>
               Get Started
             </a>
             <a href="{% url 'accounts:register' %}" class="bg-white text-gray-700 px-6 py-3 rounded-xl font-medium inline-flex items-center shadow-lg hover:bg-gray-50 transition-all border border-gray-200">
