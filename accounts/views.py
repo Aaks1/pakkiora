@@ -205,6 +205,7 @@ def admin_dashboard(request):
         'active_doctors': Doctor.objects.filter(is_active=True).count(),
         'recent_users': User.objects.filter(is_staff=False).order_by('-date_joined')[:5],
         'recent_doctors': Doctor.objects.order_by('-created_at')[:5],
+        'user': request.user,
     }
     return render(request, 'admin/dashboard.html', context)
 
@@ -224,7 +225,7 @@ def admin_list(request):
             Q(email__icontains=search_query)
         )
     
-    return render(request, 'admin/admin_list.html', {'admins': admins})
+    return render(request, 'admin/admin_list.html', {'admins': admins, 'user': request.user})
 
 @login_required
 @user_passes_test(check_is_admin)
@@ -258,7 +259,7 @@ def admin_create(request):
     else:
         form = AdminUserForm()
     
-    return render(request, 'admin/admin_create.html', {'form': form})
+    return render(request, 'admin/admin_create.html', {'form': form, 'user': request.user})
 
 @login_required
 @user_passes_test(check_is_admin)
@@ -296,7 +297,7 @@ def admin_edit(request, admin_id):
         except AdminProfile.DoesNotExist:
             pass
     
-    return render(request, 'admin/admin_edit.html', {'form': form, 'admin': admin})
+    return render(request, 'admin/admin_edit.html', {'form': form, 'admin': admin, 'user': request.user})
 
 @login_required
 @user_passes_test(check_is_admin)
@@ -311,23 +312,23 @@ def admin_delete(request, admin_id):
         # Validation checks
         if not confirm_delete:
             safe_message(request, 'error', 'You must confirm the deletion.')
-            return render(request, 'admin/admin_delete.html', {'admin': admin})
+            return render(request, 'admin/admin_delete.html', {'admin': admin, 'user': request.user})
         
         if confirm_username != admin.username:
             safe_message(request, 'error', 'Username confirmation does not match.')
-            return render(request, 'admin/admin_delete.html', {'admin': admin})
+            return render(request, 'admin/admin_delete.html', {'admin': admin, 'user': request.user})
         
         # Prevent self-deletion
         if admin.id == request.user.id:
             safe_message(request, 'error', 'You cannot delete your own account.')
-            return render(request, 'admin/admin_delete.html', {'admin': admin})
+            return render(request, 'admin/admin_delete.html', {'admin': admin, 'user': request.user})
         
         username = admin.username
         admin.delete()
         safe_message(request, 'success', f'Admin {username} deleted successfully!')
         return redirect('admin_list')
     
-    return render(request, 'admin/admin_delete.html', {'admin': admin})
+    return render(request, 'admin/admin_delete.html', {'admin': admin, 'user': request.user})
 
 @login_required
 @user_passes_test(check_is_admin)
@@ -346,7 +347,7 @@ def doctor_list(request):
             Q(department__icontains=search_query)
         )
     
-    return render(request, 'admin/doctor_list.html', {'doctors': doctors})
+    return render(request, 'admin/doctor_list.html', {'doctors': doctors, 'user': request.user})
 
 @login_required
 @user_passes_test(check_is_admin)
@@ -368,7 +369,7 @@ def doctor_create(request):
     else:
         form = DoctorForm()
     
-    return render(request, 'admin/doctor_create.html', {'form': form})
+    return render(request, 'admin/doctor_create.html', {'form': form, 'user': request.user})
 
 @login_required
 @user_passes_test(check_is_admin)
@@ -385,7 +386,7 @@ def doctor_edit(request, doctor_id):
     else:
         form = DoctorForm(instance=doctor)
     
-    return render(request, 'admin/doctor_edit.html', {'form': form, 'doctor': doctor})
+    return render(request, 'admin/doctor_edit.html', {'form': form, 'doctor': doctor, 'user': request.user})
 
 @login_required
 @user_passes_test(check_is_admin)
@@ -399,7 +400,7 @@ def doctor_delete(request, doctor_id):
         safe_message(request, 'success', f'{doctor_name} deleted successfully!')
         return redirect('doctor_list')
     
-    return render(request, 'admin/doctor_delete.html', {'doctor': doctor})
+    return render(request, 'admin/doctor_delete.html', {'doctor': doctor, 'user': request.user})
 
 @login_required
 @user_passes_test(check_is_admin)
