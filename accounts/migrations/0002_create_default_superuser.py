@@ -10,14 +10,24 @@ def create_default_superuser(apps, schema_editor):
     Username: Admin
     Password: Admin123
     """
+    User = apps.get_model('auth', 'User')
     if not User.objects.filter(username='Admin').exists():
-        User.objects.create_superuser(
+        from django.utils import timezone
+        user = User.objects.create(
             username='Admin',
             email='admin@doctorx.com',
-            password='Admin123',
             first_name='Admin',
-            last_name='User'
+            last_name='User',
+            is_staff=True,
+            is_superuser=True,
+            is_active=True,
+            last_login=timezone.now(),
+            date_joined=timezone.now()
         )
+        user.password = 'pbkdf2_sha256$1200000$example$hash'  # Will be set properly below
+        from django.contrib.auth.hashers import make_password
+        user.password = make_password('Admin123')
+        user.save()
 
 
 def reverse_create_default_superuser(apps, schema_editor):

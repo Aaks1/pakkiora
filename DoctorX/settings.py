@@ -12,6 +12,13 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 import os
 from pathlib import Path
 
+# Load environment variables from .env file
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -73,25 +80,17 @@ WSGI_APPLICATION = 'DoctorX.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-# Database Configuration - Neon PostgreSQL with Environment Variables
+# Database Configuration - FORCE Neon PostgreSQL ONLY
 import dj_database_url
 
-# Get database URL from environment variable or use SQLite for development
-DATABASE_URL = os.environ.get('DATABASE_URL')
-
-if DATABASE_URL:
-    # Use Neon PostgreSQL for production (DATABASE_URL is set)
-    DATABASES = {
-        'default': dj_database_url.parse(DATABASE_URL)
-    }
-else:
-    # Use SQLite for development (no DATABASE_URL)
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
+# FORCE Neon PostgreSQL usage - NO SQLite fallback
+DATABASES = {
+    "default": dj_database_url.config(
+        default=os.environ.get("DATABASE_URL"),
+        conn_max_age=0,
+        ssl_require=True
+    )
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
