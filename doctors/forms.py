@@ -25,7 +25,7 @@ class DoctorForm(forms.ModelForm):
     class Meta:
         model = Doctor
         fields = [
-            'first_name', 'last_name', 'date_of_birth', 'gender', 'blood_group', 'profile_picture',
+            'first_name', 'last_name', 'date_of_birth', 'gender', 'blood_group',
             'email', 'phone', 'address', 'specialization', 'qualification', 'experience_years',
             'license_number', 'department', 'bio', 'is_active'
         ]
@@ -35,7 +35,6 @@ class DoctorForm(forms.ModelForm):
             'date_of_birth': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'gender': forms.Select(attrs={'class': 'form-control'}),
             'blood_group': forms.Select(attrs={'class': 'form-control'}),
-            'profile_picture': forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/*'}),
             'email': forms.EmailInput(attrs={'class': 'form-control'}),
             'phone': forms.TextInput(attrs={'class': 'form-control'}),
             'address': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
@@ -47,34 +46,6 @@ class DoctorForm(forms.ModelForm):
             'bio': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
             'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
-    
-    def clean_profile_picture(self):
-        """Custom validation for profile picture"""
-        profile_picture = self.cleaned_data.get('profile_picture')
-        
-        if profile_picture:
-            # Check file size (max 5MB)
-            if profile_picture.size > 5 * 1024 * 1024:
-                raise forms.ValidationError('Image file size must be less than 5MB.')
-            
-            # Check if it's a valid image file
-            try:
-                from PIL import Image
-                image = Image.open(profile_picture)
-                image.verify()  # Verify it's a valid image
-                
-                # Check image dimensions (optional)
-                if image.width > 2000 or image.height > 2000:
-                    raise forms.ValidationError('Image dimensions must be less than 2000x2000 pixels.')
-                    
-            except Exception:
-                # If PIL is not available or image is invalid, just check file extension
-                valid_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp']
-                file_extension = profile_picture.name.lower().split('.')[-1]
-                if f'.{file_extension}' not in valid_extensions:
-                    raise forms.ValidationError('Please upload a valid image file (JPG, PNG, GIF, BMP, or WEBP).')
-        
-        return profile_picture
 
 class AvailabilityForm(forms.ModelForm):
     """Form for creating doctor availability"""
