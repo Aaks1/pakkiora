@@ -115,18 +115,5 @@
         </div>
     </div>
 
-    <script>
-    // Form validation
-    document.querySelector('form').addEventListener('submit', function(e) {
-        const confirmUsername = document.querySelector('input[name="confirm_username"]').value;
-        const adminUsername = '{{ admin.username }}';
-        
-        if (confirmUsername !== adminUsername) {
-            e.preventDefault();
-            alert('Please type the admin username correctly to confirm deletion.');
-            return false;
-        }
-    });
-    </script>
-</body>
+    </body>
 </html>

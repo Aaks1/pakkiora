@@ -310,11 +310,16 @@
                     </div>
                     
                     {% if appointment.status == 'BOOKED' %}
-                        <a href="{% url 'admin_cancel_appointment' appointment.id %}" 
-                           class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                        <form method="post" action="{% url 'admin_cancel_appointment' appointment.id %}" 
+                          onsubmit="return confirm('Are you sure you want to cancel this appointment?')"
+                          style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" 
+                                class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
                             <i class="fas fa-times mr-2"></i>
                             Cancel Appointment
-                        </a>
+                        </button>
+                    </form>
                     {% endif %}
                 </div>
             </div>

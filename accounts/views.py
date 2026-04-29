@@ -304,32 +304,21 @@ def admin_edit(request, admin_id):
 @user_passes_test(check_is_admin)
 def admin_delete(request, admin_id):
     """Delete admin user"""
-    admin = get_object_or_404(User, id=admin_id, is_staff=True)
-    
     if request.method == 'POST':
-        confirm_username = request.POST.get('confirm_username')
-        confirm_delete = request.POST.get('confirm_delete')
-        
-        # Validation checks
-        if not confirm_delete:
-            safe_message(request, 'error', 'You must confirm the deletion.')
-            return render(request, 'admin/admin_delete.html', {'admin': admin, 'user': request.user})
-        
-        if confirm_username != admin.username:
-            safe_message(request, 'error', 'Username confirmation does not match.')
-            return render(request, 'admin/admin_delete.html', {'admin': admin, 'user': request.user})
+        admin = get_object_or_404(User, id=admin_id, is_staff=True)
         
         # Prevent self-deletion
         if admin.id == request.user.id:
             safe_message(request, 'error', 'You cannot delete your own account.')
-            return render(request, 'admin/admin_delete.html', {'admin': admin, 'user': request.user})
+            return redirect('admin_list')
         
         username = admin.username
         admin.delete()
         safe_message(request, 'success', f'Admin {username} deleted successfully!')
         return redirect('admin_list')
     
-    return render(request, 'admin/admin_delete.html', {'admin': admin, 'user': request.user})
+    # Redirect to admin list if not POST
+    return redirect('admin_list')
 
 @login_required
 @user_passes_test(check_is_admin)
