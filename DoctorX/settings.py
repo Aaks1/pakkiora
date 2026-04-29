@@ -159,3 +159,17 @@ MESSAGE_TAGS = {
     messages.WARNING: 'warning',
     messages.ERROR: 'danger',
 }
+
+# CSRF Settings for Vercel Deployment
+CSRF_TRUSTED_ORIGINS = [
+    'https://pakkiora.vercel.app',
+    'https://*.vercel.app',
+    'https://pakkiora-hcg6learg-aaks1s-projects.vercel.app',
+    'https://pakkiora-9cc2ppjus-aaks1s-projects.vercel.app',
+    'https://*-aaks1s-projects.vercel.app',
+]
+
+# Additional CSRF settings for serverless environments
+CSRF_COOKIE_SECURE = os.environ.get('CSRF_COOKIE_SECURE', 'True') == 'True'
+CSRF_COOKIE_HTTPONLY = True
+CSRF_COOKIE_SAMESITE = 'Lax'
