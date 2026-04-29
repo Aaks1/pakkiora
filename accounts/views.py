@@ -354,7 +354,7 @@ def doctor_list(request):
 def doctor_create(request):
     """Create new doctor"""
     if request.method == 'POST':
-        form = DoctorForm(request.POST, request.FILES)
+        form = DoctorForm(request.POST)
         if form.is_valid():
             # Create doctor profile without user account
             doctor = form.save()
