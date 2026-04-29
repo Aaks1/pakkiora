@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Piki Ora</title>
+    <title>Login - DoctorX Healthcare</title>
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -20,194 +20,474 @@
     <!-- External CSS -->
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
     
-    <!-- Button Styling Fallback -->
+    <!-- Professional UI Design System -->
     <style>
-        .login-btn-primary {
-            background: linear-gradient(135deg, #4f46e5 0%, #9333ea 100%) !important;
-            background-color: #4f46e5 !important;
-            color: #ffffff !important;
-            border: 2px solid #4f46e5 !important;
-            padding: 16px 32px !important;
-            border-radius: 12px !important;
-            font-weight: 700 !important;
-            font-size: 18px !important;
-            font-family: 'Inter', sans-serif !important;
-            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.15) !important;
-            transition: all 0.3s ease !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            text-align: center !important;
-            cursor: pointer !important;
+        :root {
+            --primary-50: #eff6ff;
+            --primary-100: #dbeafe;
+            --primary-200: #bfdbfe;
+            --primary-300: #93c5fd;
+            --primary-400: #60a5fa;
+            --primary-500: #3b82f6;
+            --primary-600: #2563eb;
+            --primary-700: #1d4ed8;
+            --primary-800: #1e40af;
+            --primary-900: #1e3a8a;
+            
+            --secondary-50: #faf5ff;
+            --secondary-100: #f3e8ff;
+            --secondary-200: #e9d5ff;
+            --secondary-300: #d8b4fe;
+            --secondary-400: #c084fc;
+            --secondary-500: #a855f7;
+            --secondary-600: #9333ea;
+            --secondary-700: #7c3aed;
+            --secondary-800: #6b21a8;
+            --secondary-900: #581c87;
+            
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-400: #9ca3af;
+            --gray-500: #6b7280;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+            --gray-900: #111827;
         }
-        .login-btn-primary:hover {
-            background: linear-gradient(135deg, #4338ca 0%, #7c3aed 100%) !important;
-            transform: translateY(-2px) !important;
-            box-shadow: 0 10px 25px rgba(79, 70, 229, 0.3) !important;
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-        .login-btn-primary i {
-            color: #ffffff !important;
-            font-size: 20px !important;
-            margin-right: 12px !important;
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, var(--primary-50) 0%, var(--secondary-50) 100%);
+            min-height: 100vh;
+            color: var(--gray-900);
+            line-height: 1.6;
         }
-        .login-btn-secondary {
-            background: #ffffff !important;
-            color: #1f2937 !important;
-            border: 2px solid #d1d5db !important;
-            padding: 16px 32px !important;
-            border-radius: 12px !important;
-            font-weight: 700 !important;
-            font-size: 18px !important;
-            font-family: 'Inter', sans-serif !important;
-            text-decoration: none !important;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
-            transition: all 0.3s ease !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            text-align: center !important;
-            cursor: pointer !important;
+        
+        /* Navigation */
+        .navbar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--gray-200);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 50;
         }
-        .login-btn-secondary:hover {
-            background: #f0f9ff !important;
-            border-color: #93c5fd !important;
-            color: #1d4ed8 !important;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1) !important;
+        
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-600);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
-        .login-btn-secondary i {
-            color: #374151 !important;
-            font-size: 20px !important;
-            margin-right: 12px !important;
+        
+        .nav-link {
+            color: var(--gray-700);
+            text-decoration: none;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
         }
-        .login-btn-secondary:hover i {
-            color: #1d4ed8 !important;
+        
+        .nav-link:hover {
+            color: var(--primary-600);
+            background: var(--primary-50);
+        }
+        
+        /* Main Container */
+        .login-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+            min-height: calc(100vh - 80px);
+        }
+        
+        /* Hero Section */
+        .hero-section {
+            text-align: center;
+            padding: 2rem;
+        }
+        
+        .hero-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--primary-500), var(--secondary-500));
+            border-radius: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 2rem;
+            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.2);
+        }
+        
+        .hero-title {
+            font-size: 3rem;
+            font-weight: 800;
+            color: var(--gray-900);
+            margin-bottom: 1rem;
+            line-height: 1.2;
+        }
+        
+        .hero-subtitle {
+            font-size: 1.25rem;
+            color: var(--gray-600);
+            margin-bottom: 2rem;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        /* Form Section */
+        .form-section {
+            background: white;
+            border-radius: 1.5rem;
+            padding: 3rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            border: 1px solid var(--gray-200);
+        }
+        
+        .form-title {
+            font-size: 1.875rem;
+            font-weight: 700;
+            color: var(--gray-900);
+            margin-bottom: 0.5rem;
+            text-align: center;
+        }
+        
+        .form-description {
+            color: var(--gray-600);
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-label {
+            display: block;
+            font-weight: 500;
+            color: var(--gray-700);
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            border: 2px solid var(--gray-200);
+            border-radius: 0.75rem;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+            background: white;
+            color: var(--gray-900);
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary-500);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        .form-input::placeholder {
+            color: var(--gray-400);
+        }
+        
+        /* Checkbox */
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+        
+        .checkbox-input {
+            width: 1.25rem;
+            height: 1.25rem;
+            color: var(--primary-600);
+            border-radius: 0.375rem;
+            border: 2px solid var(--gray-300);
+            margin-right: 0.75rem;
+        }
+        
+        .checkbox-label {
+            color: var(--gray-700);
+            font-size: 0.875rem;
+            cursor: pointer;
+        }
+        
+        /* Buttons */
+        .btn {
+            padding: 1rem 2rem;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            font-size: 1rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            text-decoration: none;
+            min-height: 3rem;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-600), var(--primary-700));
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(135deg, var(--primary-700), var(--primary-800));
+            transform: translateY(-1px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        
+        .btn-secondary {
+            background: white;
+            color: var(--gray-700);
+            border: 2px solid var(--gray-200);
+        }
+        
+        .btn-secondary:hover {
+            background: var(--gray-50);
+            border-color: var(--gray-300);
+            color: var(--gray-900);
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+        
+        .btn-group .btn {
+            flex: 1;
+        }
+        
+        /* Error Messages */
+        .error-message {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+            padding: 1rem;
+            border-radius: 0.75rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .login-container {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+                padding: 1rem;
+            }
+            
+            .hero-section {
+                padding: 1rem;
+            }
+            
+            .hero-title {
+                font-size: 2rem;
+            }
+            
+            .form-section {
+                padding: 2rem;
+            }
+            
+            .btn-group {
+                flex-direction: column;
+            }
+        }
+        
+        /* Accessibility */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+        
+        /* Focus States */
+        *:focus-visible {
+            outline: 2px solid var(--primary-500);
+            outline-offset: 2px;
         }
     </style>
 </head>
-<body class="bg-gray-50">
+<body>
 
-<!-- NAVBAR -->
-<header class="sticky-nav border-b border-gray-200 sticky top-0 z-50">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="flex justify-between items-center h-16">
-      
-      <!-- Logo -->
-      <div class="flex items-center">
-        <h2 class="text-2xl font-bold text-gray-900 flex items-center">
-          <i class="fas fa-user-md mr-2 text-indigo-600"></i>
-          Doctor<span class="text-indigo-600">X</span>
-        </h2>
-      </div>
-
-      <!-- Navigation -->
-      <nav class="hidden md:flex space-x-8">
-        <a href="{% url 'home' %}" class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
-          Home
-        </a>
-        <a href="{% url 'accounts:register' %}" class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
-          Register
-        </a>
-      </nav>
-
-      <!-- Mobile menu button -->
-      <div class="md:hidden">
-        <a href="{% url 'accounts:register' %}" class="text-indigo-600 px-4 py-2 rounded-lg text-sm font-medium border border-indigo-200">
-          <i class="fas fa-user-plus mr-2"></i>
-          Register
-        </a>
-      </div>
-    </div>
-  </div>
-</header>
-
-<!-- LOGIN SECTION -->
-<section class="min-h-screen py-12 lg:py-20">
-  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-    
-    <!-- Header -->
-    <div class="text-center mb-12">
-      <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl mb-6">
-        <i class="fas fa-sign-in-alt text-3xl text-indigo-600"></i>
-      </div>
-      <h1 class="text-4xl font-light text-gray-900 mb-4">Welcome back</h1>
-      <p class="text-lg text-gray-600 max-w-2xl mx-auto">
-        Sign in to your Piki Ora account and continue your healthcare journey with our caring professionals.
-      </p>
-    </div>
-
-    <!-- Login Form -->
-    <div class="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
-      <form method="post" class="space-y-8 p-8 lg:p-12">
-        {% csrf_token %}
-        
-        <!-- Error Messages -->
-        {% if messages %}
-          {% for message in messages %}
-            <div class="bg-red-50 border border-red-200 rounded-xl p-4">
-              <div class="flex items-center">
-                <i class="fas fa-exclamation-triangle text-red-500 mr-3"></i>
-                <div class="text-red-700">
-                  <p class="text-sm">{{ message }}</p>
-                </div>
-              </div>
+<!-- NAVIGATION -->
+<nav class="navbar">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center">
+            <!-- Logo -->
+            <div class="logo">
+                <i class="fas fa-user-md"></i>
+                Doctor<span style="color: var(--secondary-600);">X</span>
             </div>
-          {% endfor %}
-        {% endif %}
+
+            <!-- Navigation Links -->
+            <div class="hidden md:flex space-x-4">
+                <a href="{% url 'home' %}" class="nav-link">Home</a>
+                <a href="{% url 'accounts:register' %}" class="nav-link">Register</a>
+            </div>
+
+            <!-- Mobile Menu -->
+            <div class="md:hidden">
+                <a href="{% url 'accounts:register' %}" class="nav-link">
+                    <i class="fas fa-user-plus mr-2"></i>
+                    Register
+                </a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- MAIN CONTENT -->
+<main class="login-container">
+    <!-- Hero Section -->
+    <div class="hero-section">
+        <div class="hero-icon">
+            <i class="fas fa-heartbeat text-white text-3xl"></i>
+        </div>
+        <h1 class="hero-title">Welcome Back</h1>
+        <p class="hero-subtitle">
+            Sign in to your DoctorX account and continue your healthcare journey with our caring professionals.
+        </p>
         
-        <!-- Login Information -->
-        <div class="space-y-6">
-          <h3 class="text-xl font-medium text-gray-900 flex items-center">
-            <i class="fas fa-lock mr-3 text-indigo-600"></i>
-            Login Information
-          </h3>
-          
-          <div class="space-y-6">
-            <div>
-              <label for="username" class="block text-sm font-medium text-gray-700 mb-2">
-                Username <span class="text-red-500">*</span>
-              </label>
-              <input type="text" id="username" name="username" required
-                     class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all duration-200 text-gray-900 placeholder-gray-500" placeholder="Enter your username" autocomplete="username">
+        <!-- Trust Indicators -->
+        <div style="display: flex; justify-content: center; gap: 2rem; margin-top: 3rem;">
+            <div style="text-align: center;">
+                <div style="font-size: 2rem; font-weight: 700; color: var(--primary-600);">24/7</div>
+                <div style="font-size: 0.875rem; color: var(--gray-600);">Support</div>
+            </div>
+            <div style="text-align: center;">
+                <div style="font-size: 2rem; font-weight: 700; color: var(--secondary-600);">100+</div>
+                <div style="font-size: 0.875rem; color: var(--gray-600);">Doctors</div>
+            </div>
+            <div style="text-align: center;">
+                <div style="font-size: 2rem; font-weight: 700; color: var(--primary-600);">50K+</div>
+                <div style="font-size: 0.875rem; color: var(--gray-600);">Patients</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form Section -->
+    <div class="form-section">
+        <form method="post">
+            {% csrf_token %}
+            
+            <!-- Form Header -->
+            <div style="text-align: center; margin-bottom: 2rem;">
+                <h2 class="form-title">Sign In</h2>
+                <p class="form-description">Enter your credentials to access your account</p>
             </div>
             
-            <div>
-              <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
-                Password <span class="text-red-500">*</span>
-              </label>
-              <input type="password" id="password" name="password" required
-                     class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all duration-200 text-gray-900 placeholder-gray-500" placeholder="Enter your password" autocomplete="current-password">
+            <!-- Error Messages -->
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="error-message">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span>{{ message }}</span>
+                    </div>
+                {% endfor %}
+            {% endif %}
+            
+            <!-- Form Fields -->
+            <div class="form-group">
+                <label for="username" class="form-label">
+                    Username <span style="color: var(--gray-400);">*</span>
+                </label>
+                <input 
+                    type="text" 
+                    id="username" 
+                    name="username" 
+                    required
+                    class="form-input"
+                    placeholder="Enter your username"
+                    autocomplete="username"
+                >
             </div>
-          </div>
-        </div>
-
-        <!-- Remember Me -->
-        <div class="flex items-center">
-          <input type="checkbox" id="remember-me" name="remember-me" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
-          <label for="remember-me" class="ml-3 text-sm text-gray-600">
-            Remember me for 30 days
-          </label>
-        </div>
-        
-        <!-- Submit Button -->
-        <div class="flex flex-col sm:flex-row gap-4">
-          <button type="submit" 
-                  class="flex-1 login-btn-primary flex items-center justify-center"
-                  style="background: linear-gradient(135deg, #4f46e5 0%, #9333ea 100%); background-color: #4f46e5; color: #ffffff; border: 2px solid #4f46e5;">
-            <i class="fas fa-sign-in-alt mr-3" style="color: #ffffff;"></i>
-            Sign In
-          </button>
-          
-          <a href="{% url 'accounts:register' %}" 
-             class="login-btn-secondary flex items-center justify-center"
-             style="background: #ffffff; color: #1f2937; border: 2px solid #d1d5db;">
-            <i class="fas fa-user-plus mr-3" style="color: #1f2937;"></i>
-            Register
-          </a>
-        </div>
-      </form>
+            
+            <div class="form-group">
+                <label for="password" class="form-label">
+                    Password <span style="color: var(--gray-400);">*</span>
+                </label>
+                <input 
+                    type="password" 
+                    id="password" 
+                    name="password" 
+                    required
+                    class="form-input"
+                    placeholder="Enter your password"
+                    autocomplete="current-password"
+                >
+            </div>
+            
+            <!-- Remember Me -->
+            <div class="checkbox-group">
+                <input 
+                    type="checkbox" 
+                    id="remember-me" 
+                    name="remember-me" 
+                    class="checkbox-input"
+                >
+                <label for="remember-me" class="checkbox-label">
+                    Remember me for 30 days
+                </label>
+            </div>
+            
+            <!-- Submit Buttons -->
+            <div class="btn-group">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-sign-in-alt"></i>
+                    Sign In
+                </button>
+                
+                <a href="{% url 'accounts:register' %}" class="btn btn-secondary">
+                    <i class="fas fa-user-plus"></i>
+                    Register
+                </a>
+            </div>
+            
+            <!-- Additional Links -->
+            <div style="text-align: center; margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--gray-200);">
+                <p style="color: var(--gray-600); font-size: 0.875rem;">
+                    Need help? 
+                    <a href="#" style="color: var(--primary-600); text-decoration: none; font-weight: 500;">
+                        Contact Support
+                    </a>
+                </p>
+            </div>
+        </form>
     </div>
-  </div>
-</section>
+</main>
 
 </body>
 </html>
