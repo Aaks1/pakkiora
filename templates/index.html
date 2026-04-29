@@ -125,6 +125,52 @@
         .hover\:bg-doctor-50:hover {
             background: var(--primary-50);
         }
+        
+        /* Image Fallbacks */
+        .image-fallback {
+            background: linear-gradient(135deg, var(--primary-100), var(--secondary-100));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary-600);
+            font-size: 3rem;
+            min-height: 200px;
+            border-radius: 1rem;
+        }
+        
+        .image-fallback-small {
+            background: linear-gradient(135deg, var(--primary-100), var(--secondary-100));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary-600);
+            font-size: 2rem;
+            width: 128px;
+            height: 128px;
+            border-radius: 1rem;
+        }
+        
+        img {
+            transition: opacity 0.3s ease;
+        }
+        
+        img.error {
+            display: none;
+        }
+        
+        img.error + .image-fallback,
+        img.error + .image-fallback-small {
+            display: flex;
+        }
+        
+        .image-container {
+            position: relative;
+        }
+        
+        .image-fallback,
+        .image-fallback-small {
+            display: none;
+        }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -305,10 +351,15 @@
       </div>
 
       <!-- Hero Image -->
-      <div class="relative">
+      <div class="relative image-container">
         <div class="absolute inset-0 bg-gradient-to-tr from-indigo-100/40 to-transparent rounded-3xl transform rotate-1"></div>
         <img src="{% static 'img/img1.jpg' %}"
-             class="w-full rounded-3xl shadow-2xl object-cover relative transform -rotate-1" alt="Doctor Consultation">
+             class="w-full rounded-3xl shadow-2xl object-cover relative transform -rotate-1" 
+             alt="Doctor Consultation"
+             onerror="this.classList.add('error');">
+        <div class="image-fallback">
+          <i class="fas fa-user-md"></i>
+        </div>
         <div class="absolute -bottom-4 -right-4 bg-white rounded-2xl shadow-xl p-4 hidden lg:block transform rotate-2">
           <div class="flex items-center space-x-3">
             <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
@@ -401,9 +452,13 @@
     <div class="grid md:grid-cols-3 gap-8 lg:gap-12">
       
       <div class="text-center space-y-6">
-        <div class="relative mx-auto w-32 h-32 rounded-2xl overflow-hidden shadow-lg transform rotate-1">
+        <div class="relative mx-auto w-32 h-32 rounded-2xl overflow-hidden shadow-lg transform rotate-1 image-container">
           <img src="{% static 'img/img1.jpg' %}" 
-               class="w-full h-full object-cover" alt="Compassionate care">
+               class="w-full h-full object-cover" alt="Compassionate care"
+               onerror="this.classList.add('error');">
+          <div class="image-fallback-small">
+            <i class="fas fa-heart"></i>
+          </div>
         </div>
         <blockquote class="text-lg text-gray-700 italic leading-relaxed">
           "Taking time to listen and explain things clearly. We believe in preventive care that puts you first."
@@ -416,9 +471,13 @@
       </div>
 
       <div class="text-center space-y-6">
-        <div class="relative mx-auto w-32 h-32 rounded-2xl overflow-hidden shadow-lg transform -rotate-1">
+        <div class="relative mx-auto w-32 h-32 rounded-2xl overflow-hidden shadow-lg transform -rotate-1 image-container">
           <img src="{% static 'img/img2.jpg' %}" 
-               class="w-full h-full object-cover" alt="Thorough care">
+               class="w-full h-full object-cover" alt="Thorough care"
+               onerror="this.classList.add('error');">
+          <div class="image-fallback-small">
+            <i class="fas fa-stethoscope"></i>
+          </div>
         </div>
         <blockquote class="text-lg text-gray-700 italic leading-relaxed">
           "Known for being thorough and compassionate. We're great with chronic conditions and long-term health."
@@ -431,9 +490,13 @@
       </div>
 
       <div class="text-center space-y-6">
-        <div class="relative mx-auto w-32 h-32 rounded-2xl overflow-hidden shadow-lg transform rotate-1">
+        <div class="relative mx-auto w-32 h-32 rounded-2xl overflow-hidden shadow-lg transform rotate-1 image-container">
           <img src="{% static 'img/img3.jpg' %}" 
-               class="w-full h-full object-cover" alt="Gentle care">
+               class="w-full h-full object-cover" alt="Gentle care"
+               onerror="this.classList.add('error');">
+          <div class="image-fallback-small">
+            <i class="fas fa-hand-holding-medical"></i>
+          </div>
         </div>
         <blockquote class="text-lg text-gray-700 italic leading-relaxed">
           "Wonderful with patients of all ages. We make visits feel comfortable and stress-free for everyone."
