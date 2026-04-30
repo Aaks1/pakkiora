@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from datetime import datetime
 from django.core.validators import EmailValidator, RegexValidator
 from django.utils import timezone
 from datetime import datetime, timedelta
@@ -60,33 +61,6 @@ class Doctor(models.Model):
         ordering = ['first_name', 'last_name']
 
 
-class DoctorSchedule(models.Model):
-    """Weekly schedule for doctors - NEW ARCHITECTURE"""
-    DAYS = [
-        (0, "Monday"),
-        (1, "Tuesday"),
-        (2, "Wednesday"),
-        (3, "Thursday"),
-        (4, "Friday"),
-        (5, "Saturday"),
-        (6, "Sunday"),
-    ]
-    
-    doctor = models.ForeignKey(Doctor, on_delete=models.CASCADE, related_name='schedules')
-    day_of_week = models.IntegerField(choices=DAYS)
-    start_time = models.TimeField()
-    end_time = models.TimeField()
-    slot_duration = models.IntegerField(default=30, help_text="Slot duration in minutes")
-    is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    
-    class Meta:
-        unique_together = ['doctor', 'day_of_week']
-        ordering = ['day_of_week', 'start_time']
-    
-    def __str__(self):
-        return f"{self.doctor.first_name} {self.doctor.last_name} - {self.get_day_of_week_display()}"
 
 
 class Patient(models.Model):

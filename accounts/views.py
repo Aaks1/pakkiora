@@ -8,10 +8,10 @@ from django.db.models import Q
 from django.utils import timezone
 from datetime import datetime, date, timedelta
 from .models import UserProfile, AdminProfile
-from doctors.models import Doctor, DoctorSchedule, Patient
+from doctors.models import Doctor, Patient
 from appointments.models import Appointment
 from .forms import UserRegistrationForm, AdminUserForm
-from doctors.forms import DoctorForm, DoctorScheduleForm
+from doctors.forms import DoctorForm
 
 def safe_message(request, level, message):
     """Safe message handling for serverless environments"""
@@ -443,106 +443,6 @@ def doctor_toggle_active(request, doctor_id):
     return redirect('doctor_list')
 
 
-@login_required
-@user_passes_test(check_is_admin)
-def doctor_schedule_list(request, doctor_id):
-    """List all schedules for a specific doctor"""
-    doctor = get_object_or_404(Doctor, id=doctor_id)
-    schedules = doctor.schedules.all().order_by('day_of_week', 'start_time')
-    
-    return render(request, 'admin/doctor_schedule_list.html', {
-        'doctor': doctor,
-        'schedules': schedules
-    })
-
-
-@login_required
-@user_passes_test(check_is_admin)
-def doctor_schedule_create(request, doctor_id):
-    """Create a new schedule for a doctor"""
-    doctor = get_object_or_404(Doctor, id=doctor_id)
-    
-    if request.method == 'POST':
-        form = DoctorScheduleForm(request.POST, doctor=doctor)
-        if form.is_valid():
-            schedule = form.save(commit=False)
-            schedule.doctor = doctor
-            schedule.save()
-            
-            safe_message(request, 'success', 
-                f'Schedule created for Dr. {doctor.first_name} {doctor.last_name}! '
-                f'Slots will be generated dynamically based on this schedule.')
-            
-            return redirect('doctor_schedule_list', doctor_id=doctor_id)
-    else:
-        form = DoctorScheduleForm(doctor=doctor)
-    
-    return render(request, 'admin/doctor_schedule_form.html', {
-        'form': form,
-        'doctor': doctor,
-        'action': 'Create'
-    })
-
-
-@login_required
-@user_passes_test(check_is_admin)
-def doctor_schedule_edit(request, doctor_id, schedule_id):
-    """Edit an existing doctor schedule"""
-    doctor = get_object_or_404(Doctor, id=doctor_id)
-    schedule = get_object_or_404(DoctorSchedule, id=schedule_id, doctor=doctor)
-    
-    if request.method == 'POST':
-        form = DoctorScheduleForm(request.POST, instance=schedule, doctor=doctor)
-        if form.is_valid():
-            form.save()
-            
-            safe_message(request, 'success', 
-                f'Schedule updated for Dr. {doctor.first_name} {doctor.last_name}! '
-                f'Slots will be generated dynamically based on this schedule.')
-            
-            return redirect('doctor_schedule_list', doctor_id=doctor_id)
-    else:
-        form = DoctorScheduleForm(instance=schedule, doctor=doctor)
-    
-    return render(request, 'admin/doctor_schedule_form.html', {
-        'form': form,
-        'doctor': doctor,
-        'schedule': schedule,
-        'action': 'Edit'
-    })
-
-
-@login_required
-@user_passes_test(check_is_admin)
-def doctor_schedule_delete(request, doctor_id, schedule_id):
-    """Delete a doctor schedule"""
-    doctor = get_object_or_404(Doctor, id=doctor_id)
-    schedule = get_object_or_404(DoctorSchedule, id=schedule_id, doctor=doctor)
-    
-    if request.method == 'POST':
-        schedule.delete()
-        safe_message(request, 'success', f'Schedule deleted for Dr. {doctor.first_name} {doctor.last_name}!')
-        return redirect('doctor_schedule_list', doctor_id=doctor_id)
-    
-    return render(request, 'admin/doctor_schedule_delete.html', {
-        'doctor': doctor,
-        'schedule': schedule
-    })
-
-
-@login_required
-@user_passes_test(check_is_admin)
-def doctor_schedule_toggle(request, doctor_id, schedule_id):
-    """Toggle schedule active status"""
-    doctor = get_object_or_404(Doctor, id=doctor_id)
-    schedule = get_object_or_404(DoctorSchedule, id=schedule_id, doctor=doctor)
-    
-    schedule.is_active = not schedule.is_active
-    schedule.save()
-    
-    status = "activated" if schedule.is_active else "deactivated"
-    safe_message(request, 'success', f'Schedule {status} for Dr. {doctor.first_name} {doctor.last_name}!')
-    return redirect('doctor_schedule_list', doctor_id=doctor_id)
 
 
 # Appointment Management Views
@@ -699,47 +599,6 @@ def user_detail_admin(request, user_id):
     return render(request, 'admin/users/user_detail.html', context)
 
 
-@login_required
-@user_passes_test(check_is_admin)
-def slot_generation_admin(request):
-    """Admin schedule management interface - NEW ARCHITECTURE"""
-    from django.utils import timezone
-    from datetime import date, timedelta, time
-    
-    today = timezone.now().date()
-    
-    # Get all active doctors
-    doctors = Doctor.objects.filter(is_active=True)
-    
-    generated_slots = []
-    errors = []
-    manual_slots = []
-    
-    if request.method == 'POST':
-        action = request.POST.get('action')
-        doctor_id = request.POST.get('doctor_id')
-        
-        if doctor_id:
-            doctor = Doctor.objects.get(id=doctor_id, is_active=True)
-            
-            if action == 'view_schedule':
-                # View doctor's current schedules
-                schedules = DoctorSchedule.objects.filter(doctor=doctor, is_active=True).order_by('day_of_week')
-                safe_message(request, 'info', f'Found {schedules.count()} active schedules for Dr. {doctor.first_name} {doctor.last_name}')
-            else:
-                safe_message(request, 'warning', 'Slot generation is now dynamic. Create schedules instead.')
-    
-    # Get all active schedules for display
-    all_schedules = DoctorSchedule.objects.filter(is_active=True).select_related('doctor').order_by('doctor__first_name', 'day_of_week')
-    
-    context = {
-        'doctors': doctors,
-        'all_schedules': all_schedules,
-        'errors': errors,
-        'today': today,
-    }
-    
-    return render(request, 'admin/slots/generate_slots.html', context)
 
 
 

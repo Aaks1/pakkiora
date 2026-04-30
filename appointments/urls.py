@@ -11,13 +11,9 @@ urlpatterns = [
     path('doctors/', views.doctor_list, name='doctors'),
     path('doctors/<int:doctor_id>/', views.doctor_detail, name='doctor_detail'),
     
-    # New Architecture - Dynamic Slot Generation
-    path('doctors/<int:doctor_id>/slots/', views.doctor_slots, name='doctor_slots'),
-    path('doctors/<int:doctor_id>/book/', views.book_appointment, name='book_appointment'),
-    
+        
     # Legacy Appointments (kept for compatibility)
     path('appointments/', views.past_appointments, name='past_appointments'),
-    path('appointments/book/<int:doctor_id>/<str:date>/<str:start_time>/', views.book_appointment, name='book_appointment'),
     path('appointments/<int:appointment_id>/', views.appointment_detail, name='appointment_detail'),
     path('appointments/<int:appointment_id>/cancel/', views.cancel_appointment, name='cancel_appointment'),
     path('appointments/list/', views.AppointmentListView.as_view(), name='appointment_list'),

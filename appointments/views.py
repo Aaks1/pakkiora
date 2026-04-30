@@ -10,9 +10,7 @@ from django.views.generic import ListView, DetailView
 
 from datetime import datetime, timedelta
 
-from doctors.models import Doctor, DoctorSchedule, Patient, Appointment
-from .forms import BookAppointmentForm
-from .schedule_generator import ScheduleGeneratorService
+from doctors.models import Doctor, Patient, Appointment
 
 
 # -----------------------------
@@ -31,16 +29,6 @@ def patient_dashboard(request):
         }
     )
 
-    # Get selected date from query parameter
-    selected_date_str = request.GET.get("date")
-    if selected_date_str:
-        try:
-            selected_date = datetime.strptime(selected_date_str, '%Y-%m-%d').date()
-        except ValueError:
-            selected_date = today
-    else:
-        selected_date = None
-
     # Get appointments for this patient
     appointments = Appointment.objects.filter(
         patient=patient
@@ -55,12 +43,6 @@ def patient_dashboard(request):
         date__lt=today
     )[:5]
 
-    # Get available doctors for selected date
-    schedules = []
-    if selected_date:
-        from .utils import get_available_doctors
-        schedules = get_available_doctors(selected_date)
-
     context = {
         'patient': patient,
         'upcoming_appointments': upcoming_appointments,
@@ -68,96 +50,14 @@ def patient_dashboard(request):
         'total_appointments': appointments.count(),
         'upcoming_count': upcoming_appointments.count(),
         'past_count': past_appointments.count(),
-        'selected_date': selected_date,
-        'schedules': schedules,
         'today': today,
     }
 
     return render(request, 'patient/dashboard.html', context)
 
 
-@login_required
-def doctor_slots(request, doctor_id):
-    """Show available slots for a specific doctor on a specific date"""
-    from .utils import get_available_slots
-    
-    doctor = get_object_or_404(Doctor, id=doctor_id, is_active=True)
-    
-    selected_date_str = request.GET.get("date")
-    if not selected_date_str:
-        messages.error(request, "Please select a date first")
-        return redirect('patient:dashboard')
-    
-    try:
-        selected_date = datetime.strptime(selected_date_str, '%Y-%m-%d').date()
-    except ValueError:
-        messages.error(request, "Invalid date format")
-        return redirect('patient:dashboard')
-    
-    # Check if date is in the past
-    if selected_date < timezone.now().date():
-        messages.error(request, "Cannot book appointments for past dates")
-        return redirect('patient:dashboard')
-    
-    # Get available slots
-    slots = get_available_slots(doctor, selected_date)
-    
-    context = {
-        'doctor': doctor,
-        'date': selected_date,
-        'slots': slots,
-    }
-    
-    return render(request, 'patient/slots.html', context)
 
 
-@login_required
-def book_appointment(request, doctor_id):
-    """Book an appointment for a specific slot"""
-    from .utils import book_appointment
-    
-    if request.method != "POST":
-        return redirect('patient:dashboard')
-    
-    doctor = get_object_or_404(Doctor, id=doctor_id, is_active=True)
-    patient, _ = Patient.objects.get_or_create(
-        user=request.user,
-        defaults={
-            "first_name": request.user.first_name or "Unknown",
-            "last_name": request.user.last_name or "User",
-        }
-    )
-    
-    date_str = request.POST.get('date')
-    start_time_str = request.POST.get('start_time')
-    end_time_str = request.POST.get('end_time')
-    
-    if not all([date_str, start_time_str, end_time_str]):
-        messages.error(request, "Missing appointment details")
-        return redirect('patient:dashboard')
-    
-    try:
-        appointment_date = datetime.strptime(date_str, '%Y-%m-%d').date()
-        start_time = datetime.strptime(start_time_str, '%H:%M:%S').time()
-        end_time = datetime.strptime(end_time_str, '%H:%M:%S').time()
-    except ValueError:
-        messages.error(request, "Invalid date or time format")
-        return redirect('patient:dashboard')
-    
-    # Check if date is in the past
-    if appointment_date < timezone.now().date():
-        messages.error(request, "Cannot book appointments for past dates")
-        return redirect('patient:dashboard')
-    
-    # Book the appointment
-    success, result = book_appointment(patient, doctor, appointment_date, start_time, end_time)
-    
-    if success:
-        messages.success(request, f"Appointment booked successfully with Dr. {doctor.first_name} {doctor.last_name}")
-    else:
-        messages.error(request, str(result))
-    
-    return redirect('patient:dashboard')
 
 
 # -----------------------------

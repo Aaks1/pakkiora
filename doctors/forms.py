@@ -2,7 +2,8 @@ from django import forms
 from django.core.validators import EmailValidator, RegexValidator
 from django.utils.safestring import mark_safe
 from django.contrib.auth.models import User
-from .models import Doctor, DoctorSchedule, Patient
+from django.utils import timezone
+from .models import Doctor, Patient
 
 
 class CustomDaySelectWidget(forms.Select):
@@ -105,77 +106,6 @@ class SlotGenerationForm(forms.Form):
         return cleaned_data
 
 
-class DoctorScheduleForm(forms.ModelForm):
-    """Form for creating and editing doctor schedules - NEW ARCHITECTURE"""
-    
-    class Meta:
-        model = DoctorSchedule
-        fields = [
-            'day_of_week', 'start_time', 'end_time', 'slot_duration', 'is_active'
-        ]
-        widgets = {
-            'day_of_week': forms.Select(attrs={'class': 'form-control'}),
-            'start_time': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
-            'end_time': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
-            'slot_duration': forms.NumberInput(attrs={'class': 'form-control', 'min': 15, 'max': 240, 'step': 15}),
-            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-        }
-    
-    def __init__(self, *args, **kwargs):
-        self.doctor = kwargs.pop('doctor', None)
-        super().__init__(*args, **kwargs)
-        
-        # Set labels
-        self.fields['day_of_week'].label = 'Day of Week'
-        self.fields['start_time'].label = 'Start Time'
-        self.fields['end_time'].label = 'End Time'
-        self.fields['slot_duration'].label = 'Slot Duration (minutes)'
-        self.fields['is_active'].label = 'Active Schedule'
-        
-        # Set help text
-        self.fields['slot_duration'].help_text = 'Duration for each appointment slot (15-240 minutes)'
-    
-    def clean(self):
-        cleaned_data = super().clean()
-        start_time = cleaned_data.get('start_time')
-        end_time = cleaned_data.get('end_time')
-        day_of_week = cleaned_data.get('day_of_week')
-        slot_duration = cleaned_data.get('slot_duration')
-        
-        if start_time and end_time:
-            # Validate time logic
-            if end_time <= start_time:
-                raise forms.ValidationError('End time must be after start time.')
-            
-            # Minimum duration of 30 minutes
-            start_minutes = start_time.hour * 60 + start_time.minute
-            end_minutes = end_time.hour * 60 + end_time.minute
-            total_minutes = end_minutes - start_minutes
-            
-            if total_minutes < 30:
-                raise forms.ValidationError('Schedule duration must be at least 30 minutes.')
-        
-        # Validate slot duration
-        if slot_duration:
-            if slot_duration < 15 or slot_duration > 240:
-                raise forms.ValidationError('Slot duration must be between 15 and 240 minutes.')
-            if slot_duration % 15 != 0:
-                raise forms.ValidationError('Slot duration must be in 15-minute increments.')
-        
-        # Check for duplicate day of week
-        if day_of_week is not None and self.doctor:
-            existing_schedules = DoctorSchedule.objects.filter(
-                doctor=self.doctor,
-                day_of_week=day_of_week
-            )
-            if self.instance and self.instance.pk:
-                existing_schedules = existing_schedules.exclude(pk=self.instance.pk)
-            
-            if existing_schedules.exists():
-                day_name = dict(DoctorSchedule.DAYS).get(day_of_week, f'Day {day_of_week}')
-                raise forms.ValidationError(f'{day_name} is already scheduled for this doctor. Please choose a different day.')
-        
-        return cleaned_data
 
 
 class PatientRegistrationForm(forms.ModelForm):

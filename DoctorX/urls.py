@@ -25,13 +25,7 @@ urlpatterns = [
     path('admin-dashboard/doctors/<int:doctor_id>/delete/', accounts.views.doctor_delete, name='doctor_delete'),
     path('admin-dashboard/doctors/<int:doctor_id>/toggle/', accounts.views.doctor_toggle_active, name='doctor_toggle_active'),
     
-    # Doctor Schedule Management
-    path('admin-dashboard/doctors/<int:doctor_id>/schedule/', accounts.views.doctor_schedule_list, name='doctor_schedule_list'),
-    path('admin-dashboard/doctors/<int:doctor_id>/schedule/create/', accounts.views.doctor_schedule_create, name='doctor_schedule_create'),
-    path('admin-dashboard/doctors/<int:doctor_id>/schedule/<int:schedule_id>/edit/', accounts.views.doctor_schedule_edit, name='doctor_schedule_edit'),
-    path('admin-dashboard/doctors/<int:doctor_id>/schedule/<int:schedule_id>/delete/', accounts.views.doctor_schedule_delete, name='doctor_schedule_delete'),
-    path('admin-dashboard/doctors/<int:doctor_id>/schedule/<int:schedule_id>/toggle/', accounts.views.doctor_schedule_toggle, name='doctor_schedule_toggle'),
-    
+        
     # Appointment Management
     path('admin-dashboard/appointments/', accounts.views.appointment_management, name='admin_appointment_management'),
     path('admin-dashboard/appointments/<int:appointment_id>/', accounts.views.appointment_detail_admin, name='admin_appointment_detail'),

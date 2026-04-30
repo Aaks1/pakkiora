@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.utils import timezone
 from django.contrib import messages
 from datetime import datetime, timedelta
-from .models import Doctor, DoctorSchedule, Patient, Appointment
+from .models import Doctor, Patient, Appointment
 
 
 @admin.register(Doctor)
@@ -13,24 +13,6 @@ class DoctorAdmin(admin.ModelAdmin):
     readonly_fields = ['created_at', 'updated_at']
 
 
-@admin.register(DoctorSchedule)
-class DoctorScheduleAdmin(admin.ModelAdmin):
-    list_display = ['doctor', 'get_day_of_week_display', 'start_time', 'end_time', 'slot_duration', 'is_active']
-    list_filter = ['day_of_week', 'is_active']
-    search_fields = ['doctor__first_name', 'doctor__last_name']
-    readonly_fields = ['created_at', 'updated_at']
-    
-    fieldsets = (
-        ('Basic Information', {
-            'fields': ('doctor', 'day_of_week', 'is_active')
-        }),
-        ('Schedule Times', {
-            'fields': ('start_time', 'end_time', 'slot_duration')
-        }),
-        ('Timestamps', {
-            'fields': ('created_at', 'updated_at')
-        })
-    )
 
 
 @admin.register(Patient)
