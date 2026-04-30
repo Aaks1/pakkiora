@@ -303,11 +303,11 @@
                     <div class="doctor-details">
                         <p class="text-sm text-gray-600 mb-1">
                             <i class="fas fa-clock mr-1"></i>
-                            {{ doctor.start_time }} - {{ doctor.end_time }}
+                            9:00 AM - 5:00 PM (Default)
                         </p>
                         <p class="text-sm text-gray-600">
                             <i class="fas fa-hourglass-half mr-1"></i>
-                            {{ doctor.slot_duration }} min slots
+                            30 min slots (Default)
                         </p>
                     </div>
                 </div>
@@ -394,13 +394,7 @@
         
         <div class="summary-item">
             <span class="summary-label">Duration:</span>
-            <span class="summary-value">
-                {% for doctor in available_doctors %}
-                    {% if doctor.id == selected_doctor_id|int %}
-                        {{ doctor.slot_duration }} minutes
-                    {% endif %}
-                {% endfor %}
-            </span>
+            <span class="summary-value">30 minutes (Default)</span>
         </div>
     </div>
     

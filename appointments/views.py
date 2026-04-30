@@ -13,6 +13,32 @@ from datetime import datetime, timedelta
 from doctors.models import Doctor, Patient, Appointment, DoctorAvailability
 
 
+def generate_default_time_slots(date):
+    """Generate time slots for a specific date using default working hours"""
+    slots = []
+    
+    # Default working hours: 9:00 AM - 5:00 PM
+    start_time = datetime.strptime('09:00', '%H:%M').time()
+    end_time = datetime.strptime('17:00', '%H:%M').time()
+    slot_duration = 30  # minutes
+    
+    current_time = datetime.combine(date, start_time)
+    end_datetime = datetime.combine(date, end_time)
+    
+    while current_time < end_datetime:
+        slot_end = current_time + timedelta(minutes=slot_duration)
+        if slot_end <= end_datetime:
+            slots.append({
+                'start_time': current_time.time(),
+                'end_time': slot_end.time(),
+                'start_str': current_time.strftime('%I:%M %p'),
+                'end_str': slot_end.strftime('%I:%M %p')
+            })
+        current_time = slot_end
+    
+    return slots
+
+
 # -----------------------------
 # PATIENT DASHBOARD (OPTIMIZED)
 # -----------------------------
@@ -340,7 +366,7 @@ def book_appointment(request):
                     patient=patient,
                     date=appointment_date,
                     start_time=appointment_time,
-                    end_time=(datetime.combine(appointment_date, appointment_time) + timedelta(minutes=doctor.slot_duration)).time(),
+                    end_time=(datetime.combine(appointment_date, appointment_time) + timedelta(minutes=30)).time(),
                     status='confirmed'
                 )
                 
@@ -364,8 +390,18 @@ def book_appointment(request):
         ).exists()
         
         if is_available:
-            # Generate available slots
-            available_slots = doctor.get_available_slots(selected_date)
+            # Generate available slots with default working hours
+            available_slots = generate_default_time_slots(selected_date)
+            
+            # Filter out booked appointments
+            booked_times = Appointment.objects.filter(
+                doctor=doctor,
+                date=selected_date,
+                status='confirmed'
+            ).values_list('start_time', flat=True)
+            
+            # Filter out booked slots
+            available_slots = [slot for slot in available_slots if slot['start_time'] not in booked_times]
     
     context = {
         'patient': patient,
