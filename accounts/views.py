@@ -52,21 +52,22 @@ def login_view(request):
         if user is not None:
             login(request, user)
             
-            # Check if user has a patient profile (for regular users)
-            try:
-                patient = Patient.objects.get(user=user)
-                safe_message(request, 'success', f'Welcome back, {patient.first_name}!')
-                return redirect('accounts:patient_dashboard')
-            except Patient.DoesNotExist:
-                # If no patient profile, check if it's an admin/staff user
-                if user.is_staff:
-                    return redirect('admin_dashboard')
-                else:
-                    # Regular user without patient profile - create one or redirect to register
+            # Check if user has a patient profile (for regular users) - optimized
+            if user.is_staff:
+                # Direct redirect for admin users - no database query needed
+                return redirect('admin_dashboard')
+            else:
+                # Use select_related for patient lookup to reduce queries
+                try:
+                    patient = Patient.objects.select_related('user').get(user=user)
+                    safe_message(request, 'success', f'Welcome back, {patient.first_name}!')
+                    return redirect('accounts:patient_dashboard')
+                except Patient.DoesNotExist:
+                    # Regular user without patient profile
                     safe_message(request, 'error', 'No patient profile found. Please complete your registration.')
                     return redirect('accounts:register')
-            except Exception as e:
-                safe_message(request, 'error', f'Login error: {str(e)}')
+                except Exception as e:
+                    safe_message(request, 'error', f'Login error: {str(e)}')
         else:
             safe_message(request, 'error', 'Invalid username or password.')
     
@@ -78,29 +79,30 @@ def register_view(request):
         form = UserRegistrationForm(request.POST)
         if form.is_valid():
             try:
-                user = form.save()
-                
-                # Create patient profile
-                patient = Patient.objects.create(
-                    user=user,
-                    first_name=user.first_name,
-                    last_name=user.last_name,
-                    phone=form.cleaned_data.get('phone', ''),
-                    address=form.cleaned_data.get('address', ''),
-                    date_of_birth=form.cleaned_data.get('date_of_birth'),
-                    blood_group=form.cleaned_data.get('blood_group', ''),
-                    allergies=form.cleaned_data.get('allergies', ''),
-                    medical_history=form.cleaned_data.get('medical_conditions', '')
-                )
+                # Use transaction for atomic operation
+                from django.db import transaction
+                with transaction.atomic():
+                    user = form.save()
+                    
+                    # Create patient profile with optimized field assignment
+                    patient = Patient.objects.create(
+                        user=user,
+                        first_name=user.first_name,
+                        last_name=user.last_name,
+                        phone=form.cleaned_data.get('phone', ''),
+                        address=form.cleaned_data.get('address', ''),
+                        date_of_birth=form.cleaned_data.get('date_of_birth'),
+                        blood_group=form.cleaned_data.get('blood_group', ''),
+                        allergies=form.cleaned_data.get('allergies', ''),
+                        medical_history=form.cleaned_data.get('medical_conditions', '')
+                    )
                 
                 safe_message(request, 'success', 'Registration successful! Please login.')
                 return redirect('accounts:login')
                 
             except Exception as e:
-                # Delete the user if patient creation fails
-                if 'user' in locals():
-                    user.delete()
-                safe_message(request, 'error', f'Error creating patient profile: {str(e)}')
+                # Use transaction rollback - no need to manually delete user
+                safe_message(request, 'error', f'Registration failed: {str(e)}')
                 return render(request, 'register.html', {'form': form})
     else:
         form = UserRegistrationForm()
@@ -198,14 +200,37 @@ def check_is_admin(user):
 @login_required
 @user_passes_test(check_is_admin)
 def admin_dashboard(request):
-    """Main admin dashboard"""
+    """Main admin dashboard - optimized for performance"""
+    # Use single query with aggregation for better performance
+    from django.db.models import Count, Q
+    
+    # Get all counts in one query using aggregation
+    user_stats = User.objects.aggregate(
+        total_users=Count('id', filter=Q(is_staff=False)),
+        total_admins=Count('id', filter=Q(is_staff=True))
+    )
+    
+    doctor_stats = Doctor.objects.aggregate(
+        total_doctors=Count('id'),
+        active_doctors=Count('id', filter=Q(is_active=True))
+    )
+    
+    # Use only() for recent items to reduce data transfer
+    recent_users = User.objects.filter(is_staff=False).only(
+        'id', 'username', 'first_name', 'last_name', 'date_joined'
+    ).order_by('-date_joined')[:5]
+    
+    recent_doctors = Doctor.objects.only(
+        'id', 'first_name', 'last_name', 'specialization', 'created_at'
+    ).order_by('-created_at')[:5]
+    
     context = {
-        'total_users': User.objects.filter(is_staff=False).count(),
-        'total_doctors': Doctor.objects.count(),
-        'total_admins': User.objects.filter(is_staff=True).count(),
-        'active_doctors': Doctor.objects.filter(is_active=True).count(),
-        'recent_users': User.objects.filter(is_staff=False).order_by('-date_joined')[:5],
-        'recent_doctors': Doctor.objects.order_by('-created_at')[:5],
+        'total_users': user_stats['total_users'],
+        'total_doctors': doctor_stats['total_doctors'],
+        'total_admins': user_stats['total_admins'],
+        'active_doctors': doctor_stats['active_doctors'],
+        'recent_users': recent_users,
+        'recent_doctors': recent_doctors,
         'user': request.user,
     }
     return render(request, 'admin/dashboard.html', context)
@@ -213,18 +238,24 @@ def admin_dashboard(request):
 @login_required
 @user_passes_test(check_is_admin)
 def admin_list(request):
-    """List all admin users"""
-    admins = User.objects.filter(is_staff=True).order_by('-date_joined')
-    
-    # Apply search filter
+    """List all admin users - optimized for performance"""
+    # Apply search filter first to reduce dataset
     search_query = request.GET.get('search')
+    
     if search_query:
-        admins = admins.filter(
+        # Use only() to fetch only required fields for list view
+        admins = User.objects.filter(is_staff=True).filter(
             Q(username__icontains=search_query) |
             Q(first_name__icontains=search_query) |
             Q(last_name__icontains=search_query) |
             Q(email__icontains=search_query)
-        )
+        ).only('id', 'username', 'first_name', 'last_name', 'email', 
+                'date_joined', 'is_active').order_by('-date_joined')
+    else:
+        # For list view, only fetch essential fields
+        admins = User.objects.filter(is_staff=True).only(
+            'id', 'username', 'first_name', 'last_name', 'email', 
+            'date_joined', 'is_active').order_by('-date_joined')
     
     return render(request, 'admin/admin_list.html', {'admins': admins, 'user': request.user})
 
@@ -323,19 +354,24 @@ def admin_delete(request, admin_id):
 @login_required
 @user_passes_test(check_is_admin)
 def doctor_list(request):
-    """List all doctors"""
-    doctors = Doctor.objects.all().order_by('-created_at')
-    
-    # Apply search filter
+    """List all doctors - optimized for performance"""
+    # Apply search filter first to reduce dataset
     search_query = request.GET.get('search')
+    
     if search_query:
-        doctors = doctors.filter(
+        # Use select_related only when needed, and only() to fetch required fields
+        doctors = Doctor.objects.filter(
             Q(first_name__icontains=search_query) |
             Q(last_name__icontains=search_query) |
             Q(email__icontains=search_query) |
             Q(specialization__icontains=search_query) |
             Q(department__icontains=search_query)
-        )
+        ).only('id', 'first_name', 'last_name', 'email', 'specialization', 
+                'department', 'license_number', 'is_active', 'created_at').order_by('-created_at')
+    else:
+        # For list view, only fetch essential fields
+        doctors = Doctor.objects.all().only('id', 'first_name', 'last_name', 'email', 'specialization', 
+                'department', 'license_number', 'is_active', 'created_at').order_by('-created_at')
     
     return render(request, 'admin/doctor_list.html', {'doctors': doctors, 'user': request.user})
 

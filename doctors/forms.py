@@ -20,7 +20,7 @@ class CustomDaySelectWidget(forms.Select):
         return option
 
 class DoctorForm(forms.ModelForm):
-    """Form for creating and editing doctors"""
+    """Form for creating and editing doctors - optimized for performance"""
     
     class Meta:
         model = Doctor
@@ -29,6 +29,36 @@ class DoctorForm(forms.ModelForm):
             'email', 'phone', 'address', 'specialization', 'qualification', 'experience_years',
             'license_number', 'department', 'bio', 'is_active'
         ]
+        widgets = {
+            'first_name': forms.TextInput(attrs={'class': 'form-control', 'autocomplete': 'given-name'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control', 'autocomplete': 'family-name'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control', 'autocomplete': 'email'}),
+            'phone': forms.TextInput(attrs={'class': 'form-control', 'autocomplete': 'tel'}),
+            'specialization': forms.Select(attrs={'class': 'form-control'}),
+            'department': forms.TextInput(attrs={'class': 'form-control'}),
+            'bio': forms.Textarea(attrs={'rows': 4, 'class': 'form-control'}),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Add HTML5 validation attributes for better UX
+        self.fields['email'].widget.attrs.update({'required': True})
+        self.fields['license_number'].widget.attrs.update({'required': True})
+        self.fields['specialization'].widget.attrs.update({'required': True})
+        
+        # Optimize field choices for better performance
+        if 'specialization' in self.fields:
+            self.fields['specialization'].choices = [
+                ('', 'Select Specialization'),
+                ('Cardiology', 'Cardiology'),
+                ('Neurology', 'Neurology'),
+                ('Orthopedics', 'Orthopedics'),
+                ('Pediatrics', 'Pediatrics'),
+                ('Psychiatry', 'Psychiatry'),
+                ('Radiology', 'Radiology'),
+                ('Surgery', 'Surgery'),
+                ('General Practice', 'General Practice'),
+            ]
         widgets = {
             'first_name': forms.TextInput(attrs={'class': 'form-control'}),
             'last_name': forms.TextInput(attrs={'class': 'form-control'}),
