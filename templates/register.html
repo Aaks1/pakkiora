@@ -221,21 +221,6 @@
                         {% endif %}
                     </div>
 
-                    <!-- Terms and Conditions -->
-                    <div>
-                        <div class="flex items-start">
-                            {{ form.terms }}
-                            <label for="id_terms" class="ml-2 text-sm text-gray-600">
-                                I agree to the <a href="#" class="text-blue-600 hover:text-blue-800">Terms and Conditions</a> and <a href="#" class="text-blue-600 hover:text-blue-800">Privacy Policy</a>
-                            </label>
-                        </div>
-                        {% if form.terms.errors %}
-                            <div class="text-red-500 text-sm mt-1">
-                                {{ form.terms.errors }}
-                            </div>
-                        {% endif %}
-                    </div>
-
                     <!-- Submit Button -->
                     <div class="flex justify-between items-center pt-6 border-t border-gray-200">
                         <a href="{% url 'accounts:login' %}" 

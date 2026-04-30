@@ -46,10 +46,6 @@ class UserRegistrationForm(forms.ModelForm):
         'rows': 3,
         'placeholder': 'List any medical conditions'
     }), required=False)
-    terms = forms.BooleanField(required=True, widget=forms.CheckboxInput(attrs={
-        'class': 'w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500'
-    }))
-    
     class Meta:
         model = User
         fields = ['username', 'email', 'first_name', 'last_name']
