@@ -21,4 +21,7 @@ urlpatterns = [
     # Profile
     path('profile/', views.patient_profile, name='profile'),
     path('change-password/', views.change_password, name='change_password'),
+    
+    # Appointment Booking
+    path('book/', views.book_appointment, name='book_appointment'),
 ]

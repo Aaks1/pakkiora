@@ -47,6 +47,11 @@ class Doctor(models.Model):
     department = models.CharField(max_length=200, blank=True, null=True)
     bio = models.TextField(blank=True, null=True)
     
+    # Working hours
+    start_time = models.TimeField(default='09:00', help_text="Doctor's shift start time")
+    end_time = models.TimeField(default='17:00', help_text="Doctor's shift end time")
+    slot_duration = models.IntegerField(default=30, help_text="Slot duration in minutes")
+    
     # Status
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -54,6 +59,44 @@ class Doctor(models.Model):
 
     def __str__(self):
         return f"Dr. {self.first_name} {self.last_name} - {self.specialization}"
+
+    def generate_time_slots(self, date):
+        """Generate time slots for a specific date based on working hours"""
+        slots = []
+        current_time = datetime.combine(date, self.start_time)
+        end_time = datetime.combine(date, self.end_time)
+        
+        while current_time < end_time:
+            slot_end = current_time + timedelta(minutes=self.slot_duration)
+            if slot_end <= end_time:
+                slots.append({
+                    'start_time': current_time.time(),
+                    'end_time': slot_end.time(),
+                    'start_str': current_time.strftime('%I:%M %p'),
+                    'end_str': slot_end.strftime('%I:%M %p')
+                })
+            current_time = slot_end
+        
+        return slots
+    
+    def get_available_slots(self, date):
+        """Get available slots for a date, excluding booked appointments"""
+        all_slots = self.generate_time_slots(date)
+        
+        # Get booked appointments for this date
+        booked_times = Appointment.objects.filter(
+            doctor=self,
+            date=date,
+            status='confirmed'
+        ).values_list('start_time', flat=True)
+        
+        # Filter out booked slots
+        available_slots = []
+        for slot in all_slots:
+            if slot['start_time'] not in booked_times:
+                available_slots.append(slot)
+        
+        return available_slots
 
     class Meta:
         verbose_name = 'Doctor'

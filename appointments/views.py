@@ -10,7 +10,7 @@ from django.views.generic import ListView, DetailView
 
 from datetime import datetime, timedelta
 
-from doctors.models import Doctor, Patient, Appointment
+from doctors.models import Doctor, Patient, Appointment, DoctorAvailability
 
 
 # -----------------------------
@@ -265,3 +265,120 @@ class AppointmentDetailView(DetailView):
     
     def get_queryset(self):
         return Appointment.objects.filter(patient=self.request.user)
+
+
+@login_required
+def book_appointment(request):
+    """Patient appointment booking with automatic slot generation"""
+    today = timezone.now().date()
+    
+    # Get patient
+    patient, _ = Patient.objects.get_or_create(
+        user=request.user,
+        defaults={
+            "first_name": request.user.first_name or "Unknown",
+            "last_name": request.user.last_name or "User",
+        }
+    )
+    
+    # Get available doctors
+    available_doctors = Doctor.objects.filter(is_active=True)
+    
+    # Get current and next week dates
+    current_week_start = today - timedelta(days=today.weekday())
+    current_week_end = current_week_start + timedelta(days=6)
+    next_week_start = current_week_start + timedelta(days=7)
+    next_week_end = next_week_start + timedelta(days=6)
+    
+    # Get available dates for all doctors
+    all_dates = []
+    for i in range(14):  # Current week + next week
+        date = current_week_start + timedelta(days=i)
+        if date >= today:
+            all_dates.append(date)
+    
+    # Get doctor availability for these dates
+    availabilities = DoctorAvailability.objects.filter(
+        date__in=all_dates,
+        is_available=True
+    ).select_related('doctor')
+    
+    # Group availability by date
+    available_dates = {}
+    for date in all_dates:
+        available_dates[date] = []
+    
+    for availability in availabilities:
+        if availability.date in available_dates:
+            available_dates[availability.date].append(availability.doctor)
+    
+    # Handle form submissions
+    if request.method == 'POST':
+        doctor_id = request.POST.get('doctor')
+        selected_date = request.POST.get('date')
+        selected_time = request.POST.get('time')
+        
+        if doctor_id and selected_date and selected_time:
+            doctor = get_object_or_404(Doctor, id=doctor_id)
+            appointment_date = datetime.strptime(selected_date, '%Y-%m-%d').date()
+            appointment_time = datetime.strptime(selected_time, '%H:%M').time()
+            
+            # Check if time slot is available
+            existing_appointment = Appointment.objects.filter(
+                doctor=doctor,
+                date=appointment_date,
+                start_time=appointment_time,
+                status='confirmed'
+            ).first()
+            
+            if existing_appointment:
+                messages.error(request, 'This time slot is already booked. Please select another time.')
+            else:
+                # Create appointment
+                appointment = Appointment.objects.create(
+                    doctor=doctor,
+                    patient=patient,
+                    date=appointment_date,
+                    start_time=appointment_time,
+                    end_time=(datetime.combine(appointment_date, appointment_time) + timedelta(minutes=doctor.slot_duration)).time(),
+                    status='confirmed'
+                )
+                
+                messages.success(request, f'Appointment booked successfully with Dr. {doctor.first_name} {doctor.last_name} on {appointment_date.strftime("%B %d, %Y")} at {selected_time}')
+                return redirect('patient:dashboard')
+    
+    # Handle doctor and date selection for slot generation
+    selected_doctor_id = request.GET.get('doctor')
+    selected_date_str = request.GET.get('date')
+    
+    available_slots = []
+    if selected_doctor_id and selected_date_str:
+        doctor = get_object_or_404(Doctor, id=selected_doctor_id)
+        selected_date = datetime.strptime(selected_date_str, '%Y-%m-%d').date()
+        
+        # Check if doctor is available on this date
+        is_available = DoctorAvailability.objects.filter(
+            doctor=doctor,
+            date=selected_date,
+            is_available=True
+        ).exists()
+        
+        if is_available:
+            # Generate available slots
+            available_slots = doctor.get_available_slots(selected_date)
+    
+    context = {
+        'patient': patient,
+        'available_doctors': available_doctors,
+        'available_dates': available_dates,
+        'available_slots': available_slots,
+        'selected_doctor_id': selected_doctor_id,
+        'selected_date_str': selected_date_str,
+        'today': today,
+        'current_week_start': current_week_start,
+        'current_week_end': current_week_end,
+        'next_week_start': next_week_start,
+        'next_week_end': next_week_end,
+    }
+    
+    return render(request, 'patient/book_appointment.html', context)

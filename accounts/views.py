@@ -602,84 +602,93 @@ def user_detail_admin(request, user_id):
 @login_required
 @user_passes_test(check_is_admin)
 def doctor_calendar(request, doctor_id):
-    """Doctor calendar management interface"""
+    """Doctor calendar management interface - week-based selection"""
     doctor = get_object_or_404(Doctor, id=doctor_id)
     
-    # Get current month and year from query params
     today = timezone.now().date()
-    month = int(request.GET.get('month', today.month))
-    year = int(request.GET.get('year', today.year))
     
-    # Calculate calendar data
-    first_day = date(year, month, 1)
-    last_day = date(year, month + 1, 1) - timedelta(days=1) if month < 12 else date(year, 12, 31)
+    # Get current week and next week dates
+    current_week_start = today - timedelta(days=today.weekday())
+    current_week_end = current_week_start + timedelta(days=6)
+    next_week_start = current_week_start + timedelta(days=7)
+    next_week_end = next_week_start + timedelta(days=6)
     
-    # Get availability for this month
+    # Get existing availability for both weeks
+    current_week_dates = [current_week_start + timedelta(days=i) for i in range(7)]
+    next_week_dates = [next_week_start + timedelta(days=i) for i in range(7)]
+    all_dates = current_week_dates + next_week_dates
+    
     availabilities = DoctorAvailability.objects.filter(
         doctor=doctor,
-        date__gte=first_day,
-        date__lte=last_day
+        date__in=all_dates
     ).order_by('date')
     
     # Create availability dictionary for quick lookup
     availability_dict = {avail.date: avail for avail in availabilities}
     
+    # Prepare date data for template
+    current_week_data = []
+    for date in current_week_dates:
+        availability = availability_dict.get(date, None)
+        current_week_data.append({
+            'date': date,
+            'availability': availability,
+            'is_today': date == today,
+            'is_past': date < today,
+            'day_name': date.strftime('%A'),
+            'date_str': date.strftime('%b %d')
+        })
+    
+    next_week_data = []
+    for date in next_week_dates:
+        availability = availability_dict.get(date, None)
+        next_week_data.append({
+            'date': date,
+            'availability': availability,
+            'is_today': date == today,
+            'is_past': date < today,
+            'day_name': date.strftime('%A'),
+            'date_str': date.strftime('%b %d')
+        })
+    
     # Handle form submissions
     if request.method == 'POST':
-        if 'single_date' in request.POST:
-            form = DoctorAvailabilityForm(request.POST)
-            if form.is_valid():
-                availability = form.save(commit=False)
-                availability.doctor = doctor
-                availability.save()
-                safe_message(request, 'success', f'Availability set for {availability.date}')
-                return redirect('admin:doctor_calendar', doctor_id=doctor_id)
-        else:
-            form = MultiDateAvailabilityForm(request.POST)
-            if form.is_valid():
-                availabilities_created = form.save_availability()
-                safe_message(request, 'success', f'Set availability for {len(availabilities_created)} dates')
-                return redirect('admin:doctor_calendar', doctor_id=doctor_id)
-    else:
-        form = DoctorAvailabilityForm(initial={'doctor': doctor})
-        multi_form = MultiDateAvailabilityForm()
-    
-    # Generate calendar weeks
-    calendar_weeks = []
-    current_date = first_day - timedelta(days=first_day.weekday())
-    
-    while current_date <= last_day or current_date.weekday() < 6:
-        week = []
-        for day in range(7):
-            if current_date.month == month:
-                availability = availability_dict.get(current_date, None)
-                week.append({
-                    'date': current_date,
-                    'is_current_month': True,
-                    'availability': availability,
-                    'is_today': current_date == today,
-                    'is_past': current_date < today
-                })
-            else:
-                week.append({
-                    'date': current_date,
-                    'is_current_month': False,
-                    'availability': None,
-                    'is_today': False,
-                    'is_past': current_date < today
-                })
-            current_date += timedelta(days=1)
-        calendar_weeks.append(week)
+        selected_dates = request.POST.getlist('selected_dates')
+        
+        if selected_dates:
+            # Update availability for selected dates
+            for date_str in selected_dates:
+                date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
+                
+                if date_obj >= today:  # Only allow future dates
+                    DoctorAvailability.objects.update_or_create(
+                        doctor=doctor,
+                        date=date_obj,
+                        defaults={'is_available': True}
+                    )
+            
+            # Remove availability for unselected dates
+            all_date_strings = [d.strftime('%Y-%m-%d') for d in all_dates if d >= today]
+            for date_str in all_date_strings:
+                if date_str not in selected_dates:
+                    date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
+                    DoctorAvailability.objects.filter(
+                        doctor=doctor,
+                        date=date_obj
+                    ).delete()
+            
+            safe_message(request, 'success', f'Updated availability for {len(selected_dates)} dates')
+            return redirect('admin:doctor_calendar', doctor_id=doctor_id)
     
     context = {
         'doctor': doctor,
-        'calendar_weeks': calendar_weeks,
-        'current_month': date(year, month, 1),
+        'current_week': current_week_data,
+        'next_week': next_week_data,
         'today': today,
-        'form': form,
-        'multi_form': multi_form,
-        'month': month,
-        'year': year,
+        'current_week_start': current_week_start,
+        'current_week_end': current_week_end,
+        'next_week_start': next_week_start,
+        'next_week_end': next_week_end,
     }
     
     return render(request, 'admin/doctor_calendar.html', context)
