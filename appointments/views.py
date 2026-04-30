@@ -52,6 +52,15 @@ def patient_dashboard(request):
 
     specializations = doctors.values_list('specialization', flat=True).distinct()
 
+    # Generate slots for today if they don't exist
+    schedule_service = ScheduleGeneratorService()
+    for doctor in doctors:
+        try:
+            schedule_service.generate_daily_slots(doctor, today)
+        except ValueError:
+            # Doctor has no schedule for today, continue
+            continue
+    
     available_today = DoctorTimeSlot.objects.filter(
         date=today,
         status='available'
