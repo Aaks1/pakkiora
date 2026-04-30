@@ -45,6 +45,10 @@ def patient_dashboard(request):
     # Get specializations efficiently
     specializations = list(set(doctor.specialization for doctor in doctors))
     
+    # Get available today count
+    from doctors.models import AppointmentSlot
+    available_today = AppointmentSlot.objects.filter(date=today, is_booked=False).count()
+    
     # Simplified statistics
     total_appointments = len(all_appointments)
     upcoming_count = len(upcoming_appointments)
