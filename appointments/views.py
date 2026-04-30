@@ -220,6 +220,79 @@ def appointment_detail(request, appointment_id):
     })
 
 
+@login_required
+def edit_appointment(request, appointment_id):
+    """Allow patient to edit date/time for booked appointments."""
+    appointment = get_object_or_404(
+        Appointment,
+        id=appointment_id,
+        patient=request.user,
+        status='BOOKED'
+    )
+
+    doctor = appointment.doctor
+    today = timezone.now().date()
+
+    if request.method == 'POST':
+        selected_date = request.POST.get('date')
+        selected_time = request.POST.get('time')
+
+        if selected_date and selected_time:
+            appointment_date = datetime.strptime(selected_date, '%Y-%m-%d').date()
+            appointment_time = datetime.strptime(selected_time, '%H:%M').time()
+
+            if appointment_date < today:
+                messages.error(request, 'Appointment date cannot be in the past.')
+            else:
+                with transaction.atomic():
+                    conflict = Appointment.objects.select_for_update().filter(
+                        doctor=doctor,
+                        date=appointment_date,
+                        start_time=appointment_time,
+                        status='BOOKED'
+                    ).exclude(id=appointment.id).exists()
+
+                    if conflict:
+                        messages.error(request, 'This slot is already booked. Please pick another time.')
+                    else:
+                        appointment.date = appointment_date
+                        appointment.start_time = appointment_time
+                        appointment.end_time = (datetime.combine(appointment_date, appointment_time) + timedelta(minutes=30)).time()
+                        appointment.save(update_fields=['date', 'start_time', 'end_time', 'updated_at'])
+                        messages.success(request, 'Appointment updated successfully.')
+                        return redirect('patient:past_appointments')
+        else:
+            messages.error(request, 'Please select both date and time.')
+
+    # Next 30 days availability for current doctor
+    available_dates = []
+    for i in range(0, 30):
+        date_candidate = today + timedelta(days=i)
+        if is_doctor_available_on_date(doctor, date_candidate):
+            available_dates.append(date_candidate)
+
+    selected_date_str = request.GET.get('date') or request.POST.get('date') or appointment.date.strftime('%Y-%m-%d')
+    selected_date = datetime.strptime(selected_date_str, '%Y-%m-%d').date()
+
+    available_slots = []
+    if is_doctor_available_on_date(doctor, selected_date):
+        available_slots = parse_doctor_time_slots(doctor, selected_date) or generate_default_time_slots(selected_date)
+        booked_times = Appointment.objects.filter(
+            doctor=doctor,
+            date=selected_date,
+            status='BOOKED'
+        ).exclude(id=appointment.id).values_list('start_time', flat=True)
+        available_slots = [slot for slot in available_slots if slot['start_time'] not in booked_times]
+
+    return render(request, 'patient/appointments/edit.html', {
+        'appointment': appointment,
+        'doctor': doctor,
+        'available_dates': available_dates,
+        'available_slots': available_slots,
+        'selected_date_str': selected_date_str,
+    })
+
+
 # -----------------------------
 # CANCEL APPOINTMENT
 # -----------------------------

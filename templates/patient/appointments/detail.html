@@ -39,13 +39,18 @@
 
         {% if appointment.status == 'BOOKED' %}
         <div class="mt-6 pt-4 border-t">
-            <form method="post">
-                {% csrf_token %}
-                <input type="hidden" name="cancel_appointment" value="true">
-                <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
-                    <i class="fas fa-times mr-2"></i>Cancel Appointment
-                </button>
-            </form>
+            <div class="flex gap-3">
+                <a href="{% url 'patient:edit_appointment' appointment.id %}" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                    <i class="fas fa-pen-to-square mr-2"></i>Edit Appointment
+                </a>
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="cancel_appointment" value="true">
+                    <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                        <i class="fas fa-times mr-2"></i>Cancel Appointment
+                    </button>
+                </form>
+            </div>
         </div>
         {% endif %}
     </div>

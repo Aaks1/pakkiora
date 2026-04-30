@@ -12,9 +12,11 @@ urlpatterns = [
     path('doctors/<int:doctor_id>/', views.doctor_detail, name='doctor_detail'),
     
         
-    # Legacy Appointments (kept for compatibility)
+    # Appointments
     path('appointments/', views.past_appointments, name='past_appointments'),
+    path('appointments/create/', views.book_appointment, name='appointment_create'),
     path('appointments/<int:appointment_id>/', views.appointment_detail, name='appointment_detail'),
+    path('appointments/<int:appointment_id>/edit/', views.edit_appointment, name='edit_appointment'),
     path('appointments/<int:appointment_id>/cancel/', views.cancel_appointment, name='cancel_appointment'),
     path('appointments/list/', views.AppointmentListView.as_view(), name='appointment_list'),
     

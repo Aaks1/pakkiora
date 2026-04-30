@@ -32,13 +32,23 @@
                     <td class="p-3">{{ doctor.email }}<br>{{ doctor.phone }}</td>
                     <td class="p-3">{% if doctor.is_active %}<span class="text-green-700">Active</span>{% else %}<span class="text-red-700">Inactive</span>{% endif %}</td>
                     <td class="p-3">
-                        <a href="{% url 'doctor_appointments' doctor.id %}" class="text-blue-600 mr-3">Appointments</a>
-                        <a href="{% url 'slot_edit' doctor.id %}" class="text-teal-600 mr-3">Slots</a>
-                        <a href="{% url 'doctor_edit' doctor.id %}" class="text-indigo-600 mr-3">Edit</a>
-                        <a href="{% url 'doctor_toggle_active' doctor.id %}" class="text-orange-600 mr-3">Toggle</a>
+                        <a href="{% url 'doctor_appointments' doctor.id %}" class="text-blue-600 mr-3 inline-flex items-center gap-1" title="Doctor Appointments">
+                            <i class="fas fa-calendar-check"></i><span>Appointments</span>
+                        </a>
+                        <a href="{% url 'slot_edit' doctor.id %}" class="text-teal-600 mr-3 inline-flex items-center gap-1" title="Manage Slots">
+                            <i class="fas fa-clock"></i><span>Slots</span>
+                        </a>
+                        <a href="{% url 'doctor_edit' doctor.id %}" class="text-indigo-600 mr-3 inline-flex items-center gap-1" title="Edit Doctor">
+                            <i class="fas fa-pen-to-square"></i><span>Edit</span>
+                        </a>
+                        <a href="{% url 'doctor_toggle_active' doctor.id %}" class="text-orange-600 mr-3 inline-flex items-center gap-1" title="Toggle Active">
+                            <i class="fas fa-power-off"></i><span>Toggle</span>
+                        </a>
                         <form method="post" action="{% url 'doctor_delete' doctor.id %}" class="inline">
                             {% csrf_token %}
-                            <button type="submit" class="text-red-600">Delete</button>
+                            <button type="submit" class="text-red-600 inline-flex items-center gap-1" title="Delete Doctor">
+                                <i class="fas fa-trash"></i><span>Delete</span>
+                            </button>
                         </form>
                     </td>
                 </tr>

@@ -27,16 +27,29 @@
             <tbody>
             {% for admin in admins %}
                 <tr class="border-t">
-                    <td class="p-3">{{ admin.username }}</td>
+                    <td class="p-3">
+                        <div class="flex items-center gap-2">
+                            <span>{{ admin.username }}</span>
+                            {% if admin.is_superuser %}
+                                <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-purple-100 text-purple-700">
+                                    <i class="fas fa-crown mr-1"></i>Superuser
+                                </span>
+                            {% endif %}
+                        </div>
+                    </td>
                     <td class="p-3">{{ admin.first_name }} {{ admin.last_name }}</td>
                     <td class="p-3">{{ admin.email }}</td>
                     <td class="p-3">{{ admin.date_joined|date:"M d, Y" }}</td>
                     <td class="p-3">
-                        <a href="{% url 'admin_edit' admin.id %}" class="text-blue-600 mr-3">Edit</a>
+                        <a href="{% url 'admin_edit' admin.id %}" class="text-blue-600 mr-3 inline-flex items-center gap-1" title="Edit Admin">
+                            <i class="fas fa-pen-to-square"></i><span>Edit</span>
+                        </a>
                         {% if admin.id != user.id %}
                         <form method="post" action="{% url 'admin_delete' admin.id %}" class="inline">
                             {% csrf_token %}
-                            <button type="submit" class="text-red-600">Delete</button>
+                            <button type="submit" class="text-red-600 inline-flex items-center gap-1" title="Delete Admin">
+                                <i class="fas fa-trash"></i><span>Delete</span>
+                            </button>
                         </form>
                         {% endif %}
                     </td>

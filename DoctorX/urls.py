@@ -45,6 +45,7 @@ urlpatterns = [
     
     # Patient Appointments
     path('patient/', include(('appointments.urls', 'appointments'), namespace='patient')),
+    path('patient-dashboard/', include(('appointments.urls', 'appointments'), namespace='patient_dashboard')),
     
     # Home/Landing
     path('', accounts.views.home, name='home'),
