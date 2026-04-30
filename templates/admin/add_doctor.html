@@ -1,0 +1,331 @@
+{% extends 'admin/base.html' %}
+{% load static %}
+
+{% block title %}Add Doctor - Piki Ora Healthcare{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <!-- Page Header -->
+    <div class="mb-8">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800">Add Doctor</h1>
+                <p class="text-gray-600 mt-2">Fill in the details to create a new doctor account.</p>
+            </div>
+            <div>
+                <a href="{% url 'admin:doctor_list' %}" class="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition-colors">
+                    <i class="fas fa-arrow-left mr-2"></i>Back to Doctors
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Doctor Form -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <form method="post" id="add-doctor-form">
+            {% csrf_token %}
+            
+            <!-- Account Details Section -->
+            <div class="mb-8">
+                <div class="border-b pb-4 mb-6">
+                    <h2 class="text-xl font-semibold text-gray-800">
+                        <i class="fas fa-user-circle mr-2"></i>Account Details
+                    </h2>
+                    <p class="text-gray-600 text-sm mt-1">Create login credentials for the doctor</p>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="{{ form.username.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            Username <span class="text-red-500">*</span>
+                        </label>
+                        {{ form.username }}
+                        {% if form.username.errors %}
+                            <div class="text-red-500 text-sm mt-1">{{ form.username.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div>
+                        <label for="{{ form.email.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            Email <span class="text-red-500">*</span>
+                        </label>
+                        {{ form.email }}
+                        {% if form.email.errors %}
+                            <div class="text-red-500 text-sm mt-1">{{ form.email.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div>
+                        <label for="{{ form.password.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            Password <span class="text-red-500">*</span>
+                        </label>
+                        {{ form.password }}
+                        {% if form.password.errors %}
+                            <div class="text-red-500 text-sm mt-1">{{ form.password.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div>
+                        <label for="{{ form.confirm_password.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            Confirm Password <span class="text-red-500">*</span>
+                        </label>
+                        {{ form.confirm_password }}
+                        {% if form.confirm_password.errors %}
+                            <div class="text-red-500 text-sm mt-1">{{ form.confirm_password.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Doctor Details Section -->
+            <div class="mb-8">
+                <div class="border-b pb-4 mb-6">
+                    <h2 class="text-xl font-semibold text-gray-800">
+                        <i class="fas fa-user-md mr-2"></i>Doctor Details
+                    </h2>
+                    <p class="text-gray-600 text-sm mt-1">Professional information and qualifications</p>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="{{ form.first_name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            First Name <span class="text-red-500">*</span>
+                        </label>
+                        {{ form.first_name }}
+                        {% if form.first_name.errors %}
+                            <div class="text-red-500 text-sm mt-1">{{ form.first_name.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div>
+                        <label for="{{ form.last_name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            Last Name <span class="text-red-500">*</span>
+                        </label>
+                        {{ form.last_name }}
+                        {% if form.last_name.errors %}
+                            <div class="text-red-500 text-sm mt-1">{{ form.last_name.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div>
+                        <label for="{{ form.specialization.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            Specialization <span class="text-red-500">*</span>
+                        </label>
+                        {{ form.specialization }}
+                        {% if form.specialization.errors %}
+                            <div class="text-red-500 text-sm mt-1">{{ form.specialization.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div>
+                        <label for="{{ form.date_of_birth.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            Date of Birth
+                        </label>
+                        {{ form.date_of_birth }}
+                        {% if form.date_of_birth.errors %}
+                            <div class="text-red-500 text-sm mt-1">{{ form.date_of_birth.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div>
+                        <label for="{{ form.phone.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            Phone
+                        </label>
+                        {{ form.phone }}
+                        {% if form.phone.errors %}
+                            <div class="text-red-500 text-sm mt-1">{{ form.phone.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div>
+                        <label for="{{ form.license_number.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            License Number
+                        </label>
+                        {{ form.license_number }}
+                        {% if form.license_number.errors %}
+                            <div class="text-red-500 text-sm mt-1">{{ form.license_number.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div>
+                        <label for="{{ form.qualification.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            Qualification
+                        </label>
+                        {{ form.qualification }}
+                        {% if form.qualification.errors %}
+                            <div class="text-red-500 text-sm mt-1">{{ form.qualification.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div>
+                        <label for="{{ form.experience_years.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            Experience Years
+                        </label>
+                        {{ form.experience_years }}
+                        {% if form.experience_years.errors %}
+                            <div class="text-red-500 text-sm mt-1">{{ form.experience_years.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div>
+                        <label for="{{ form.department.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            Department
+                        </label>
+                        {{ form.department }}
+                        {% if form.department.errors %}
+                            <div class="text-red-500 text-sm mt-1">{{ form.department.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="md:col-span-2">
+                        <label for="{{ form.address.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            Address
+                        </label>
+                        {{ form.address }}
+                        {% if form.address.errors %}
+                            <div class="text-red-500 text-sm mt-1">{{ form.address.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="md:col-span-2">
+                        <label for="{{ form.bio.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            Bio
+                        </label>
+                        {{ form.bio }}
+                        {% if form.bio.errors %}
+                            <div class="text-red-500 text-sm mt-1">{{ form.bio.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Schedule Section -->
+            <div class="mb-8">
+                <div class="border-b pb-4 mb-6">
+                    <h2 class="text-xl font-semibold text-gray-800">
+                        <i class="fas fa-calendar-alt mr-2"></i>Schedule
+                    </h2>
+                    <p class="text-gray-600 text-sm mt-1">Set available days and time slots for appointments</p>
+                </div>
+                
+                <!-- Available Days -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-3">
+                        Available Days
+                    </label>
+                    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+                        {% for day in form.available_days %}
+                            <div class="flex items-center">
+                                {{ day.tag }}
+                                <label for="{{ day.id_for_label }}" class="ml-2 text-sm text-gray-700">
+                                    {{ day.choice_label }}
+                                </label>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    {% if form.available_days.errors %}
+                        <div class="text-red-500 text-sm mt-1">{{ form.available_days.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                
+                <!-- Time Slots -->
+                <div>
+                    <label for="{{ form.time_slots.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                        Time Slots
+                    </label>
+                    {{ form.time_slots }}
+                    <p class="text-gray-500 text-sm mt-1">
+                        Enter time slots separated by commas. Use 24-hour format e.g. 09:00,10:30,14:00
+                    </p>
+                    {% if form.time_slots.errors %}
+                        <div class="text-red-500 text-sm mt-1">{{ form.time_slots.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Form Errors -->
+            {% if form.non_field_errors %}
+                <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <div class="text-red-700">
+                        {% for error in form.non_field_errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- Submit Buttons -->
+            <div class="flex justify-end space-x-4">
+                <a href="{% url 'admin:doctor_list' %}" class="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition-colors">
+                    <i class="fas fa-times mr-2"></i>Cancel
+                </a>
+                <button type="submit" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors">
+                    <i class="fas fa-save mr-2"></i>Add Doctor
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.form-control {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-check-input {
+    width: 1rem;
+    height: 1rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.25rem;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.form-check-input:checked {
+    background-color: #3b82f6;
+    border-color: #3b82f6;
+}
+
+.text-red-500 {
+    color: #ef4444;
+}
+
+.text-gray-500 {
+    color: #6b7280;
+}
+
+.text-gray-600 {
+    color: #4b5563;
+}
+
+.text-gray-700 {
+    color: #374151;
+}
+
+.text-gray-800 {
+    color: #1f2937;
+}
+
+.bg-red-50 {
+    background-color: #fef2f2;
+}
+
+.border-red-200 {
+    border-color: #fecaca;
+}
+
+.text-red-700 {
+    color: #b91c1c;
+}
+</style>
+{% endblock %}

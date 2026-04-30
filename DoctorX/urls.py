@@ -20,6 +20,7 @@ urlpatterns = [
     path('admin-dashboard/admins/<int:admin_id>/edit/', accounts.views.admin_edit, name='admin_edit'),
     path('admin-dashboard/admins/<int:admin_id>/delete/', accounts.views.admin_delete, name='admin_delete'),
     path('admin-dashboard/doctors/', accounts.views.doctor_list, name='doctor_list'),
+    path('admin-dashboard/doctors/add/', accounts.views.add_doctor, name='add_doctor'),
     path('admin-dashboard/doctors/create/', accounts.views.doctor_create, name='doctor_create'),
     path('admin-dashboard/doctors/<int:doctor_id>/edit/', accounts.views.doctor_edit, name='doctor_edit'),
     path('admin-dashboard/doctors/<int:doctor_id>/delete/', accounts.views.doctor_delete, name='doctor_delete'),

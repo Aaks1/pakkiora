@@ -6,77 +6,193 @@ from django.utils import timezone
 from .models import Doctor, Patient, DoctorAvailability
 
 
-class CustomDaySelectWidget(forms.Select):
-    """Custom select widget that styles already scheduled days"""
+class AddDoctorForm(forms.ModelForm):
+    """Comprehensive form for adding doctors with account details and schedule"""
     
-    def create_option(self, name, value, label, selected, index, subindex=None, attrs=None):
-        option = super().create_option(name, value, label, selected, index, subindex, attrs)
-        
-        # Check if this option is already scheduled
-        if label and "(Already Scheduled)" in label:
-            # Add styling to make it look disabled
-            option['attrs']['class'] = option['attrs'].get('class', '') + ' text-gray-400 bg-gray-50'
-            option['attrs']['disabled'] = True
-            
-        return option
-
-class DoctorForm(forms.ModelForm):
-    """Form for creating and editing doctors - optimized for performance"""
+    # Account Details
+    username = forms.CharField(
+        max_length=150,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Enter username',
+            'required': True
+        })
+    )
+    password = forms.CharField(
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Enter password',
+            'required': True
+        })
+    )
+    confirm_password = forms.CharField(
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Confirm password',
+            'required': True
+        })
+    )
+    
+    # Doctor Details
+    specialization = forms.ChoiceField(
+        choices=[
+            ('', 'Select Specialization'),
+            ('Cardiology', 'Cardiology'),
+            ('Neurology', 'Neurology'),
+            ('Orthopedics', 'Orthopedics'),
+            ('Pediatrics', 'Pediatrics'),
+            ('Psychiatry', 'Psychiatry'),
+            ('Radiology', 'Radiology'),
+            ('Surgery', 'Surgery'),
+            ('General Practice', 'General Practice'),
+            ('Dermatology', 'Dermatology'),
+            ('Ophthalmology', 'Ophthalmology'),
+            ('ENT', 'ENT'),
+            ('Gynecology', 'Gynecology'),
+        ],
+        widget=forms.Select(attrs={'class': 'form-control', 'required': True})
+    )
+    
+    # Available Days
+    available_days = forms.MultipleChoiceField(
+        choices=[
+            ('monday', 'Monday'),
+            ('tuesday', 'Tuesday'),
+            ('wednesday', 'Wednesday'),
+            ('thursday', 'Thursday'),
+            ('friday', 'Friday'),
+            ('saturday', 'Saturday'),
+            ('sunday', 'Sunday'),
+        ],
+        widget=forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input'}),
+        required=False
+    )
+    
+    # Time Slots
+    time_slots = forms.CharField(
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 3,
+            'placeholder': '09:00, 10:30, 14:00, 15:30',
+            'help_text': 'Enter time slots separated by commas. Use 24-hour format e.g. 09:00,10:30,14:00'
+        }),
+        required=False,
+        help_text='Enter time slots separated by commas. Use 24-hour format e.g. 09:00,10:30,14:00'
+    )
     
     class Meta:
         model = Doctor
         fields = [
-            'first_name', 'last_name', 'date_of_birth', 'gender', 'blood_group',
-            'email', 'phone', 'address', 'specialization', 'qualification', 'experience_years',
-            'license_number', 'department', 'bio', 'is_active'
+            'first_name', 'last_name', 'email', 'date_of_birth', 'phone', 'address',
+            'qualification', 'experience_years', 'license_number', 'department', 'bio'
         ]
         widgets = {
-            'first_name': forms.TextInput(attrs={'class': 'form-control', 'autocomplete': 'given-name'}),
-            'last_name': forms.TextInput(attrs={'class': 'form-control', 'autocomplete': 'family-name'}),
-            'email': forms.EmailInput(attrs={'class': 'form-control', 'autocomplete': 'email'}),
-            'phone': forms.TextInput(attrs={'class': 'form-control', 'autocomplete': 'tel'}),
-            'specialization': forms.Select(attrs={'class': 'form-control'}),
-            'department': forms.TextInput(attrs={'class': 'form-control'}),
-            'bio': forms.Textarea(attrs={'rows': 4, 'class': 'form-control'}),
-        }
-    
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Add HTML5 validation attributes for better UX
-        self.fields['email'].widget.attrs.update({'required': True})
-        self.fields['license_number'].widget.attrs.update({'required': True})
-        self.fields['specialization'].widget.attrs.update({'required': True})
-        
-        # Optimize field choices for better performance
-        if 'specialization' in self.fields:
-            self.fields['specialization'].choices = [
-                ('', 'Select Specialization'),
-                ('Cardiology', 'Cardiology'),
-                ('Neurology', 'Neurology'),
-                ('Orthopedics', 'Orthopedics'),
-                ('Pediatrics', 'Pediatrics'),
-                ('Psychiatry', 'Psychiatry'),
-                ('Radiology', 'Radiology'),
-                ('Surgery', 'Surgery'),
-                ('General Practice', 'General Practice'),
-            ]
-        widgets = {
-            'first_name': forms.TextInput(attrs={'class': 'form-control'}),
-            'last_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'first_name': forms.TextInput(attrs={'class': 'form-control', 'required': True}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control', 'required': True}),
+            'email': forms.EmailInput(attrs={'class': 'form-control', 'required': True}),
             'date_of_birth': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-            'gender': forms.Select(attrs={'class': 'form-control'}),
-            'blood_group': forms.Select(attrs={'class': 'form-control'}),
-            'email': forms.EmailInput(attrs={'class': 'form-control'}),
             'phone': forms.TextInput(attrs={'class': 'form-control'}),
             'address': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
-            'specialization': forms.TextInput(attrs={'class': 'form-control'}),
             'qualification': forms.TextInput(attrs={'class': 'form-control'}),
             'experience_years': forms.NumberInput(attrs={'class': 'form-control', 'min': 0}),
             'license_number': forms.TextInput(attrs={'class': 'form-control'}),
             'department': forms.TextInput(attrs={'class': 'form-control'}),
             'bio': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
-            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['first_name'].label = 'First Name'
+        self.fields['last_name'].label = 'Last Name'
+        self.fields['email'].label = 'Email'
+        self.fields['date_of_birth'].label = 'Date of Birth'
+        self.fields['phone'].label = 'Phone'
+        self.fields['address'].label = 'Address'
+        self.fields['qualification'].label = 'Qualification'
+        self.fields['experience_years'].label = 'Experience Years'
+        self.fields['license_number'].label = 'License Number'
+        self.fields['department'].label = 'Department'
+        self.fields['bio'].label = 'Bio'
+        
+        # Make required fields
+        self.fields['first_name'].required = True
+        self.fields['last_name'].required = True
+        self.fields['email'].required = True
+        self.fields['specialization'].required = True
+    
+    def clean_username(self):
+        username = self.cleaned_data.get('username')
+        if User.objects.filter(username=username).exists():
+            raise forms.ValidationError('Username already exists.')
+        return username
+    
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        if User.objects.filter(email=email).exists():
+            raise forms.ValidationError('Email already exists.')
+        return email
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        password = cleaned_data.get('password')
+        confirm_password = cleaned_data.get('confirm_password')
+        
+        if password and confirm_password:
+            if password != confirm_password:
+                raise forms.ValidationError('Passwords do not match.')
+        
+        return cleaned_data
+    
+    def save(self, commit=True):
+        # Create user account
+        user = User.objects.create_user(
+            username=self.cleaned_data['username'],
+            email=self.cleaned_data['email'],
+            password=self.cleaned_data['password'],
+            first_name=self.cleaned_data['first_name'],
+            last_name=self.cleaned_data['last_name']
+        )
+        
+        # Create doctor profile
+        doctor = super().save(commit=False)
+        doctor.user = user
+        if commit:
+            doctor.save()
+            
+            # Create availability based on available days and time slots
+            available_days = self.cleaned_data.get('available_days', [])
+            time_slots = self.cleaned_data.get('time_slots', '')
+            
+            if available_days and time_slots:
+                # Parse time slots
+                slot_list = [slot.strip() for slot in time_slots.split(',') if slot.strip()]
+                
+                # Create availability for next 30 days
+                from datetime import datetime, timedelta
+                today = timezone.now().date()
+                
+                for i in range(30):
+                    date = today + timedelta(days=i)
+                    day_name = date.strftime('%A').lower()
+                    
+                    if day_name in available_days:
+                        for slot in slot_list:
+                            try:
+                                # Parse time slot
+                                time_obj = datetime.strptime(slot, '%H:%M').time()
+                                
+                                # Create availability for this time slot
+                                DoctorAvailability.objects.create(
+                                    doctor=doctor,
+                                    date=date,
+                                    start_time=time_obj,
+                                    end_time=(datetime.combine(date, time_obj) + timedelta(minutes=30)).time(),
+                                    is_available=True
+                                )
+                            except ValueError:
+                                continue  # Skip invalid time formats
+        
+        return doctor
 
 
 class SlotGenerationForm(forms.Form):

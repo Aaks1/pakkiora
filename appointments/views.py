@@ -136,6 +136,122 @@ def doctor_detail(request, doctor_id):
 
 
 # -----------------------------
+# DOCTOR-SPECIFIC BOOKING (Piki Ora Style)
+# -----------------------------
+@login_required
+def doctor_book_appointment(request, doctor_id):
+    """Doctor-specific booking page like Piki Ora"""
+    doctor = get_object_or_404(Doctor, id=doctor_id, is_active=True)
+    
+    # Get patient
+    patient, _ = Patient.objects.get_or_create(
+        user=request.user,
+        defaults={
+            "first_name": request.user.first_name or "Unknown",
+            "last_name": request.user.last_name or "User",
+        }
+    )
+    
+    today = timezone.now().date()
+    
+    # Get current and next week dates
+    current_week_start = today - timedelta(days=today.weekday())
+    current_week_end = current_week_start + timedelta(days=6)
+    next_week_start = current_week_start + timedelta(days=7)
+    next_week_end = next_week_start + timedelta(days=6)
+    
+    # Get available dates for this doctor
+    all_dates = []
+    for i in range(14):  # Current week + next week
+        date = current_week_start + timedelta(days=i)
+        if date >= today:
+            all_dates.append(date)
+    
+    # Get doctor availability for these dates
+    availabilities = DoctorAvailability.objects.filter(
+        doctor=doctor,
+        date__in=all_dates,
+        is_available=True
+    ).order_by('date')
+    
+    # Handle form submissions
+    if request.method == 'POST':
+        selected_date = request.POST.get('date')
+        selected_time = request.POST.get('time')
+        
+        if selected_date and selected_time:
+            appointment_date = datetime.strptime(selected_date, '%Y-%m-%d').date()
+            appointment_time = datetime.strptime(selected_time, '%H:%M').time()
+            
+            # Check if time slot is available
+            existing_appointment = Appointment.objects.filter(
+                doctor=doctor,
+                date=appointment_date,
+                start_time=appointment_time,
+                status='confirmed'
+            ).first()
+            
+            if existing_appointment:
+                messages.error(request, 'This time slot is already booked. Please select another time.')
+            else:
+                # Create appointment
+                appointment = Appointment.objects.create(
+                    doctor=doctor,
+                    patient=patient,
+                    date=appointment_date,
+                    start_time=appointment_time,
+                    end_time=(datetime.combine(appointment_date, appointment_time) + timedelta(minutes=30)).time(),
+                    status='confirmed'
+                )
+                
+                messages.success(request, f'Appointment booked successfully with Dr. {doctor.first_name} {doctor.last_name} on {appointment_date.strftime("%B %d, %Y")} at {selected_time}')
+                return redirect('patient:doctors')
+    
+    # Handle date selection for slot generation
+    selected_date_str = request.GET.get('date')
+    
+    available_slots = []
+    if selected_date_str:
+        selected_date = datetime.strptime(selected_date_str, '%Y-%m-%d').date()
+        
+        # Check if doctor is available on this date
+        is_available = DoctorAvailability.objects.filter(
+            doctor=doctor,
+            date=selected_date,
+            is_available=True
+        ).exists()
+        
+        if is_available:
+            # Generate available slots with default working hours
+            available_slots = generate_default_time_slots(selected_date)
+            
+            # Filter out booked appointments
+            booked_times = Appointment.objects.filter(
+                doctor=doctor,
+                date=selected_date,
+                status='confirmed'
+            ).values_list('start_time', flat=True)
+            
+            # Filter out booked slots
+            available_slots = [slot for slot in available_slots if slot['start_time'] not in booked_times]
+    
+    context = {
+        'doctor': doctor,
+        'patient': patient,
+        'availabilities': availabilities,
+        'available_slots': available_slots,
+        'selected_date_str': selected_date_str,
+        'today': today,
+        'current_week_start': current_week_start,
+        'current_week_end': current_week_end,
+        'next_week_start': next_week_start,
+        'next_week_end': next_week_end,
+    }
+    
+    return render(request, 'patient/doctor_book_appointment.html', context)
+
+
+# -----------------------------
 # LEGACY BOOK APPOINTMENT (REDIRECT TO NEW SYSTEM)
 # -----------------------------
 @login_required

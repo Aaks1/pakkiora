@@ -11,7 +11,7 @@ from .models import UserProfile, AdminProfile
 from doctors.models import Doctor, Patient, DoctorAvailability
 from appointments.models import Appointment
 from .forms import UserRegistrationForm, AdminUserForm
-from doctors.forms import DoctorForm, DoctorAvailabilityForm, MultiDateAvailabilityForm
+from doctors.forms import DoctorAvailabilityForm, MultiDateAvailabilityForm, AddDoctorForm
 
 def safe_message(request, level, message):
     """Safe message handling for serverless environments"""
@@ -692,6 +692,25 @@ def doctor_calendar(request, doctor_id):
     }
     
     return render(request, 'admin/doctor_calendar.html', context)
+
+
+# -----------------------------
+# ADD DOCTOR (COMPREHENSIVE FORM)
+# -----------------------------
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def add_doctor(request):
+    """Add Doctor with comprehensive form including account details and schedule"""
+    if request.method == 'POST':
+        form = AddDoctorForm(request.POST)
+        if form.is_valid():
+            doctor = form.save()
+            safe_message(request, 'success', f'Dr. {doctor.first_name} {doctor.last_name} has been added successfully!')
+            return redirect('admin:doctor_list')
+    else:
+        form = AddDoctorForm()
+    
+    return render(request, 'admin/add_doctor.html', {'form': form})
 
 
 
