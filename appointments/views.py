@@ -2,11 +2,11 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
-from django.views.generic import ListView, DetailView
 from django.db import transaction
 from django.db.models import Q
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.forms import PasswordChangeForm
+from django.views.generic import ListView
 
 from datetime import datetime, timedelta
 
@@ -296,3 +296,31 @@ def change_password(request):
     return render(request, 'patient/change_password.html', {
         'form': form
     })
+
+
+# -----------------------------
+# PATIENT PROFILE
+# -----------------------------
+@login_required
+def patient_profile(request):
+    user = request.user
+    
+    patient, _ = Patient.objects.get_or_create(
+        user=user,
+        defaults={
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "email": user.email,
+        }
+    )
+    
+    appointments = Appointment.objects.filter(
+        patient=user
+    ).count()
+    
+    context = {
+        'patient': patient,
+        'total_appointments': appointments,
+    }
+    
+    return render(request, 'patient/profile.html', context)
