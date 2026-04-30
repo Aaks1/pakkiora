@@ -35,6 +35,16 @@ class ScheduleGeneratorService:
         """
         from doctors.models import DoctorSchedule, DoctorTimeSlot
         
+        # Check if slots already exist for this date
+        existing_slots_count = DoctorTimeSlot.objects.filter(
+            doctor=doctor, 
+            date=target_date
+        ).count()
+        
+        if existing_slots_count > 0:
+            # Slots already exist, return count without regenerating
+            return existing_slots_count
+        
         # Get weekday mapping (0=Monday, 6=Sunday)
         weekday = target_date.weekday()
         weekday_mapping = {
@@ -51,15 +61,12 @@ class ScheduleGeneratorService:
         except DoctorSchedule.DoesNotExist:
             raise ValueError(f"No schedule template found for doctor {doctor} on weekday {weekday_mapping[weekday]}")
         
-        # Delete existing slots for this date (idempotent)
-        DoctorTimeSlot.objects.filter(doctor=doctor, date=target_date).delete()
-        
         # Generate slots
         slots = self._generate_slots_for_schedule(schedule, doctor, target_date)
         
-        # Bulk create slots
+        # Bulk create slots with ignore_conflicts to handle race conditions
         if slots:
-            DoctorTimeSlot.objects.bulk_create(slots, batch_size=500)
+            DoctorTimeSlot.objects.bulk_create(slots, batch_size=500, ignore_conflicts=True)
         
         return len(slots)
     
