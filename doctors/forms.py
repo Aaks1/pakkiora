@@ -67,7 +67,7 @@ class AddDoctorForm(forms.ModelForm):
             'qualification': forms.TextInput(attrs={'class': 'form-control', 'required': True}),
             'experience_years': forms.NumberInput(attrs={'class': 'form-control', 'min': 0}),
             'license_number': forms.TextInput(attrs={'class': 'form-control', 'required': True}),
-            'department': forms.Select(attrs={'class': 'form-control'}),
+            'department': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. Cardiac Care'}),
             'bio': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
         }
     

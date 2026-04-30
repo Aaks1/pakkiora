@@ -8,6 +8,7 @@ from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.forms import PasswordChangeForm
 from django.views.generic import ListView, DetailView
 from django.urls import reverse
+from django.core.paginator import Paginator
 
 from datetime import datetime, timedelta
 
@@ -86,7 +87,20 @@ def patient_dashboard(request):
     appointments = Appointment.objects.filter(patient=request.user).select_related('doctor')
     upcoming_appointments = appointments.filter(date__gte=today, status='BOOKED').order_by('date', 'start_time')[:5]
     recent_appointments = appointments.order_by('-date', '-start_time')[:5]
-    available_doctors = Doctor.objects.filter(is_active=True).order_by('first_name', 'last_name')[:6]
+    doctor_search = request.GET.get('doctor_search', '').strip()
+    available_doctors_qs = Doctor.objects.filter(is_active=True)
+    if doctor_search:
+        available_doctors_qs = available_doctors_qs.filter(
+            Q(first_name__icontains=doctor_search) |
+            Q(last_name__icontains=doctor_search) |
+            Q(specialization__icontains=doctor_search) |
+            Q(department__icontains=doctor_search)
+        )
+
+    available_doctors_qs = available_doctors_qs.order_by('first_name', 'last_name')
+    doctors_paginator = Paginator(available_doctors_qs, 6)
+    doctor_page = request.GET.get('doctor_page')
+    available_doctors = doctors_paginator.get_page(doctor_page)
 
     context = {
         "patient": patient,
@@ -97,6 +111,7 @@ def patient_dashboard(request):
         "upcoming_appointments": upcoming_appointments,
         "recent_appointments": recent_appointments,
         "available_doctors": available_doctors,
+        "doctor_search": doctor_search,
     }
     return render(request, 'patient/dashboard.html', context)
 
