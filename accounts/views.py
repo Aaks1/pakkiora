@@ -45,12 +45,6 @@ def login_view(request):
     
     if request.method == 'POST':
         from django.contrib.auth import authenticate
-        from django.views.decorators.csrf import csrf_failure
-        from django.http import HttpResponseBadRequest
-        
-        # Verify CSRF token manually for debugging
-        if not request.POST.get('csrfmiddlewaretoken'):
-            return HttpResponseBadRequest("CSRF token missing")
         
         username = request.POST.get('username')
         password = request.POST.get('password')
