@@ -2,12 +2,10 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
-from django.views.generic import ListView, DetailView
-from django.urls import reverse
-from django.db import models, transaction
-from doctors.models import Doctor, DoctorTimeSlot
+from django.db import transaction
+from doctors.models import Doctor, DoctorTimeSlot, DoctorSchedule
 from .models import Appointment
-from .forms import AppointmentForm, BookAppointmentForm
+from .forms import BookAppointmentForm
 from .schedule_generator import ScheduleGeneratorService
 
 @login_required
@@ -46,6 +44,25 @@ def patient_dashboard(request):
     
     # Get specializations efficiently
     specializations = list(set(doctor.specialization for doctor in doctors))
+    
+    # Auto-generate slots for all doctors for next 7 days
+    from .schedule_generator import ScheduleGeneratorService
+    schedule_service = ScheduleGeneratorService()
+    
+    for doctor in doctors:
+        try:
+            # Generate slots for next 7 days for this doctor
+            for i in range(7):
+                target_date = today + timedelta(days=i)
+                try:
+                    schedule_service.generate_daily_slots(doctor, target_date)
+                except ValueError:
+                    # Skip days without schedule
+                    continue
+        except Exception as e:
+            # Log error but continue
+            print(f"Error generating slots for Dr. {doctor.first_name} {doctor.last_name}: {e}")
+            continue
     
     # Get available today count using new slot system
     from doctors.models import DoctorTimeSlot
@@ -154,6 +171,33 @@ def doctor_detail(request, doctor_id):
         'today': today,
     }
     return render(request, 'patient/doctors/doctor_profile_final.html', context)
+
+
+def generate_slots_for_all_doctors():
+    """Background task to generate slots for all active doctors"""
+    from doctors.models import Doctor
+    from datetime import timedelta
+    
+    schedule_service = ScheduleGeneratorService()
+    today = timezone.now().date()
+    
+    # Get all active doctors
+    doctors = Doctor.objects.filter(is_active=True)
+    
+    for doctor in doctors:
+        try:
+            # Generate slots for next 7 days
+            for i in range(7):
+                target_date = today + timedelta(days=i)
+                try:
+                    schedule_service.generate_daily_slots(doctor, target_date)
+                except ValueError:
+                    # Skip days without schedule
+                    continue
+        except Exception as error:
+            # Log error but continue with other doctors
+            print(f"Error generating slots for Dr. {doctor.first_name} {doctor.last_name}: {error}")
+            continue
 
 
 
