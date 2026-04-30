@@ -10,8 +10,7 @@ from django.views.generic import ListView, DetailView
 
 from datetime import datetime, timedelta
 
-from doctors.models import Doctor, DoctorSchedule, Patient
-from .models import Appointment
+from doctors.models import Doctor, DoctorSchedule, Patient, Appointment
 from .forms import BookAppointmentForm
 from .schedule_generator import ScheduleGeneratorService
 
@@ -24,12 +23,11 @@ def patient_dashboard(request):
     user = request.user
     today = timezone.now().date()
 
-    patient, _ = Patient.objects.get_or_create(
+    patient, created = Patient.objects.get_or_create(
         user=user,
         defaults={
-            "first_name": user.first_name,
-            "last_name": user.last_name,
-            "email": user.email,
+            "first_name": user.first_name or "Unknown",
+            "last_name": user.last_name or "User",
         }
     )
 
@@ -122,7 +120,13 @@ def book_appointment(request, doctor_id):
         return redirect('patient:dashboard')
     
     doctor = get_object_or_404(Doctor, id=doctor_id, is_active=True)
-    patient = Patient.objects.get(user=request.user)
+    patient, _ = Patient.objects.get_or_create(
+        user=request.user,
+        defaults={
+            "first_name": request.user.first_name or "Unknown",
+            "last_name": request.user.last_name or "User",
+        }
+    )
     
     date_str = request.POST.get('date')
     start_time_str = request.POST.get('start_time')
