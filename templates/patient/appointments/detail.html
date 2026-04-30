@@ -260,10 +260,6 @@
                             </div>
                             <div class="flex space-x-3">
                                 {% if appointment.status == 'BOOKED' %}
-                                    <a href="#" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                                        <i class="fas fa-phone mr-2"></i>
-                                        Contact Doctor
-                                    </a>
                                     <!-- Cancel Appointment Form -->
                                     <form method="post" class="inline">
                                         {% csrf_token %}
