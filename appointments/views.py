@@ -90,53 +90,84 @@ def doctor_list(request):
 
 @login_required
 def doctor_detail(request, doctor_id):
-    """View doctor details and available time slots using new slot system"""
+    """View doctor details and simple weekly schedule"""
     from doctors.models import Doctor
-    from datetime import datetime, timedelta
-    from .schedule_generator import ScheduleGeneratorService
+    from datetime import datetime, timedelta, time
+    from django.db import connection
     
     doctor = get_object_or_404(Doctor, id=doctor_id, is_active=True)
-    schedule_service = ScheduleGeneratorService()
     
-    # Generate available time slots for next 2 weeks
+    # Get doctor's weekly schedule directly from database
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT works_monday, works_tuesday, works_wednesday, works_thursday, 
+                   works_friday, works_saturday, works_sunday, start_time, end_time
+            FROM doctors_doctor 
+            WHERE id = %s
+        """, [doctor.id])
+        result = cursor.fetchone()
+        
+        if result:
+            schedule_fields = {
+                'works_monday': bool(result[0]),
+                'works_tuesday': bool(result[1]),
+                'works_wednesday': bool(result[2]),
+                'works_thursday': bool(result[3]),
+                'works_friday': bool(result[4]),
+                'works_saturday': bool(result[5]),
+                'works_sunday': bool(result[6]),
+                'start_time': result[7],
+                'end_time': result[8]
+            }
+        else:
+            schedule_fields = None
+    
+    # Generate simple weekly schedule for next 3 weeks
     available_slots = []
     start_date = timezone.now().date()
     
-    for day_offset in range(14):  # Next 14 days
+    # Day mapping
+    day_mapping = {
+        0: 'works_monday', 1: 'works_tuesday', 2: 'works_wednesday',
+        3: 'works_thursday', 4: 'works_friday', 5: 'works_saturday', 6: 'works_sunday'
+    }
+    
+    for day_offset in range(21):  # Next 21 days (3 weeks)
         current_date = start_date + timedelta(days=day_offset)
+        day_of_week = current_date.weekday()
+        field_name = day_mapping[day_of_week]
         
-        # Skip past dates
-        if current_date < start_date:
-            continue
-        
-        # Get available slots for this date
-        try:
-            # Generate slots for this date if they don't exist
-            schedule_service.generate_daily_slots(doctor, current_date)
+        # Check if doctor works on this day
+        if schedule_fields and schedule_fields.get(field_name, False):
+            # Generate 30-minute slots for working day
+            slots = []
+            start_time = schedule_fields['start_time']
+            end_time = schedule_fields['end_time']
             
-            # Get available slots
-            slots = ScheduleGeneratorService.get_available_slots_for_date(doctor, current_date)
+            # Create 30-minute slots
+            current_time = datetime.combine(current_date, start_time)
+            end_datetime = datetime.combine(current_date, end_time)
             
-            if slots:  # Only add days with available slots
-                day_slots = []
-                for slot in slots:
-                    day_slots.append({
-                        'time': slot.local_start_time,
-                        'end_time': slot.local_end_time,
-                        'date': current_date,
-                        'slot_id': slot.id,
-                        'booking_url': f"/patient/appointments/book/{doctor_id}/{current_date.strftime('%Y-%m-%d')}/{slot.local_start_time.strftime('%H:%M')}/"
-                    })
+            while current_time + timedelta(minutes=30) <= end_datetime:
+                slot_end = current_time + timedelta(minutes=30)
                 
+                slots.append({
+                    'time': current_time.time().strftime('%H:%M'),
+                    'end_time': slot_end.time().strftime('%H:%M'),
+                    'date': current_date,
+                    'booking_url': f"/patient/appointments/book/{doctor_id}/{current_date.strftime('%Y-%m-%d')}/{current_time.time().strftime('%H:%M')}/"
+                })
+                
+                current_time = slot_end
+            
+            if slots:  # Only add days with slots
                 available_slots.append({
                     'date': current_date,
                     'day_name': current_date.strftime('%A'),
-                    'day_name_short': current_date.strftime('%A')[:3],
-                    'slots': day_slots
+                    'slots': slots,
+                    'working_hours': f"{start_time.strftime('%H:%M')} - {end_time.strftime('%H:%M')}",
+                    'total_slots': len(slots)
                 })
-        except ValueError:
-            # No schedule template for this day
-            continue
     
     context = {
         'doctor': doctor,
