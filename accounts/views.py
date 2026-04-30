@@ -8,10 +8,11 @@ from django.db.models import Q
 from django.utils import timezone
 from datetime import datetime, date, timedelta
 from .models import UserProfile, AdminProfile
-from doctors.models import Doctor, Patient, DoctorAvailability
+from doctors.models import Doctor, Patient
 from appointments.models import Appointment
 from .forms import UserRegistrationForm, AdminUserForm
-from doctors.forms import DoctorAvailabilityForm, MultiDateAvailabilityForm, AddDoctorForm
+from doctors.forms import AddDoctorForm, DoctorUpdateForm
+from .default_admin import ensure_default_superuser, DEFAULT_ADMIN_USERNAME
 
 def safe_message(request, level, message):
     """Safe message handling for serverless environments"""
@@ -203,6 +204,7 @@ def check_is_admin(user):
 @user_passes_test(check_is_admin)
 def admin_dashboard(request):
     """Main admin dashboard - optimized for performance"""
+    ensure_default_superuser()
     # Use single query with aggregation for better performance
     from django.db.models import Count, Q
     
@@ -241,6 +243,7 @@ def admin_dashboard(request):
 @user_passes_test(check_is_admin)
 def admin_list(request):
     """List all admin users - optimized for performance"""
+    ensure_default_superuser()
     # Apply search filter first to reduce dataset
     search_query = request.GET.get('search')
     
@@ -265,11 +268,15 @@ def admin_list(request):
 @user_passes_test(check_is_admin)
 def admin_create(request):
     """Create new admin user"""
+    ensure_default_superuser()
     if request.method == 'POST':
         form = AdminUserForm(request.POST)
         if form.is_valid():
             try:
                 user = form.save(commit=False)
+                if user.username == DEFAULT_ADMIN_USERNAME:
+                    safe_message(request, 'error', f'Username "{DEFAULT_ADMIN_USERNAME}" is reserved for the Django superuser.')
+                    return render(request, 'admin/admin_create.html', {'form': form, 'user': request.user})
                 user.is_staff = True
                 user.is_superuser = False  # Regular admin, not superuser
                 user.save()
@@ -299,7 +306,11 @@ def admin_create(request):
 @user_passes_test(check_is_admin)
 def admin_edit(request, admin_id):
     """Edit admin user"""
+    ensure_default_superuser()
     admin = get_object_or_404(User, id=admin_id, is_staff=True)
+    if admin.username == DEFAULT_ADMIN_USERNAME and admin.is_superuser:
+        safe_message(request, 'warning', 'Default Django superuser is protected and cannot be edited here.')
+        return redirect('admin_list')
     
     if request.method == 'POST':
         form = AdminUserForm(request.POST, instance=admin)
@@ -337,8 +348,12 @@ def admin_edit(request, admin_id):
 @user_passes_test(check_is_admin)
 def admin_delete(request, admin_id):
     """Delete admin user"""
+    ensure_default_superuser()
     if request.method == 'POST':
         admin = get_object_or_404(User, id=admin_id, is_staff=True)
+        if admin.username == DEFAULT_ADMIN_USERNAME and admin.is_superuser:
+            safe_message(request, 'error', 'Default Django superuser cannot be deleted.')
+            return redirect('admin_list')
         
         # Prevent self-deletion
         if admin.id == request.user.id:
@@ -379,40 +394,18 @@ def doctor_list(request):
 
 @login_required
 @user_passes_test(check_is_admin)
-def doctor_create(request):
-    """Create new doctor"""
-    if request.method == 'POST':
-        form = AddDoctorForm(request.POST)
-        if form.is_valid():
-            # Create doctor profile with user account
-            doctor = form.save()
-            
-            safe_message(request, 'success', f'Dr. {doctor.first_name} {doctor.last_name} created successfully!')
-            return redirect('doctor_list')
-        else:
-            # Form is not valid, show errors
-            for field, errors in form.errors.items():
-                for error in errors:
-                    safe_message(request, 'error', f'{field}: {error}')
-    else:
-        form = AddDoctorForm()
-    
-    return render(request, 'admin/add_doctor.html', {'form': form, 'user': request.user})
-
-@login_required
-@user_passes_test(check_is_admin)
 def doctor_edit(request, doctor_id):
     """Edit doctor"""
     doctor = get_object_or_404(Doctor, id=doctor_id)
     
     if request.method == 'POST':
-        form = AddDoctorForm(request.POST, instance=doctor)
+        form = DoctorUpdateForm(request.POST, instance=doctor)
         if form.is_valid():
             form.save()
             safe_message(request, 'success', f'Dr. {doctor.first_name} {doctor.last_name} updated successfully!')
             return redirect('doctor_list')
     else:
-        form = AddDoctorForm(instance=doctor)
+        form = DoctorUpdateForm(instance=doctor)
     
     return render(request, 'admin/doctor_edit.html', {'form': form, 'doctor': doctor, 'user': request.user})
 
@@ -597,101 +590,6 @@ def user_detail_admin(request, user_id):
         'appointments': appointments,
     }
     return render(request, 'admin/users/user_detail.html', context)
-
-
-@login_required
-@user_passes_test(check_is_admin)
-def doctor_calendar(request, doctor_id):
-    """Doctor calendar management interface - week-based selection"""
-    doctor = get_object_or_404(Doctor, id=doctor_id)
-    
-    today = timezone.now().date()
-    
-    # Get current week and next week dates
-    current_week_start = today - timedelta(days=today.weekday())
-    current_week_end = current_week_start + timedelta(days=6)
-    next_week_start = current_week_start + timedelta(days=7)
-    next_week_end = next_week_start + timedelta(days=6)
-    
-    # Get existing availability for both weeks
-    current_week_dates = [current_week_start + timedelta(days=i) for i in range(7)]
-    next_week_dates = [next_week_start + timedelta(days=i) for i in range(7)]
-    all_dates = current_week_dates + next_week_dates
-    
-    availabilities = DoctorAvailability.objects.filter(
-        doctor=doctor,
-        date__in=all_dates
-    ).order_by('date')
-    
-    # Create availability dictionary for quick lookup
-    availability_dict = {avail.date: avail for avail in availabilities}
-    
-    # Prepare date data for template
-    current_week_data = []
-    for date in current_week_dates:
-        availability = availability_dict.get(date, None)
-        current_week_data.append({
-            'date': date,
-            'availability': availability,
-            'is_today': date == today,
-            'is_past': date < today,
-            'day_name': date.strftime('%A'),
-            'date_str': date.strftime('%b %d')
-        })
-    
-    next_week_data = []
-    for date in next_week_dates:
-        availability = availability_dict.get(date, None)
-        next_week_data.append({
-            'date': date,
-            'availability': availability,
-            'is_today': date == today,
-            'is_past': date < today,
-            'day_name': date.strftime('%A'),
-            'date_str': date.strftime('%b %d')
-        })
-    
-    # Handle form submissions
-    if request.method == 'POST':
-        selected_dates = request.POST.getlist('selected_dates')
-        
-        if selected_dates:
-            # Update availability for selected dates
-            for date_str in selected_dates:
-                date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
-                
-                if date_obj >= today:  # Only allow future dates
-                    DoctorAvailability.objects.update_or_create(
-                        doctor=doctor,
-                        date=date_obj,
-                        defaults={'is_available': True}
-                    )
-            
-            # Remove availability for unselected dates
-            all_date_strings = [d.strftime('%Y-%m-%d') for d in all_dates if d >= today]
-            for date_str in all_date_strings:
-                if date_str not in selected_dates:
-                    date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
-                    DoctorAvailability.objects.filter(
-                        doctor=doctor,
-                        date=date_obj
-                    ).delete()
-            
-            safe_message(request, 'success', f'Updated availability for {len(selected_dates)} dates')
-            return redirect('doctor_calendar', doctor_id=doctor_id)
-    
-    context = {
-        'doctor': doctor,
-        'current_week': current_week_data,
-        'next_week': next_week_data,
-        'today': today,
-        'current_week_start': current_week_start,
-        'current_week_end': current_week_end,
-        'next_week_start': next_week_start,
-        'next_week_end': next_week_end,
-    }
-    
-    return render(request, 'admin/doctor_calendar.html', context)
 
 
 # -----------------------------

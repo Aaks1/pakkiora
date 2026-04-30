@@ -353,12 +353,8 @@
       <!-- Hero Image -->
       <div class="relative image-container">
         <div class="absolute inset-0 bg-gradient-to-tr from-indigo-100/40 to-transparent rounded-3xl transform rotate-1"></div>
-        <img src="{% static 'img/img1.jpg' %}"
-             class="w-full rounded-3xl shadow-2xl object-cover relative transform -rotate-1" 
-             alt="Doctor Consultation"
-             onerror="this.classList.add('error');">
-        <div class="image-fallback">
-          <i class="fas fa-user-md"></i>
+        <div class="w-full rounded-3xl shadow-2xl relative transform -rotate-1 min-h-[360px] bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center">
+          <i class="fas fa-user-md text-7xl text-indigo-500"></i>
         </div>
         <div class="absolute -bottom-4 -right-4 bg-white rounded-2xl shadow-xl p-4 hidden lg:block transform rotate-2">
           <div class="flex items-center space-x-3">
@@ -452,13 +448,8 @@
     <div class="grid md:grid-cols-3 gap-8 lg:gap-12">
       
       <div class="text-center space-y-6">
-        <div class="relative mx-auto w-32 h-32 rounded-2xl overflow-hidden shadow-lg transform rotate-1 image-container">
-          <img src="{% static 'img/img1.jpg' %}" 
-               class="w-full h-full object-cover" alt="Compassionate care"
-               onerror="this.classList.add('error');">
-          <div class="image-fallback-small">
-            <i class="fas fa-heart"></i>
-          </div>
+        <div class="relative mx-auto w-32 h-32 rounded-2xl overflow-hidden shadow-lg transform rotate-1 bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center">
+          <i class="fas fa-heart text-3xl text-indigo-600"></i>
         </div>
         <blockquote class="text-lg text-gray-700 italic leading-relaxed">
           "Taking time to listen and explain things clearly. We believe in preventive care that puts you first."
@@ -471,13 +462,8 @@
       </div>
 
       <div class="text-center space-y-6">
-        <div class="relative mx-auto w-32 h-32 rounded-2xl overflow-hidden shadow-lg transform -rotate-1 image-container">
-          <img src="{% static 'img/img2.jpg' %}" 
-               class="w-full h-full object-cover" alt="Thorough care"
-               onerror="this.classList.add('error');">
-          <div class="image-fallback-small">
-            <i class="fas fa-stethoscope"></i>
-          </div>
+        <div class="relative mx-auto w-32 h-32 rounded-2xl overflow-hidden shadow-lg transform -rotate-1 bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center">
+          <i class="fas fa-stethoscope text-3xl text-purple-600"></i>
         </div>
         <blockquote class="text-lg text-gray-700 italic leading-relaxed">
           "Known for being thorough and compassionate. We're great with chronic conditions and long-term health."
@@ -490,13 +476,8 @@
       </div>
 
       <div class="text-center space-y-6">
-        <div class="relative mx-auto w-32 h-32 rounded-2xl overflow-hidden shadow-lg transform rotate-1 image-container">
-          <img src="{% static 'img/img3.jpg' %}" 
-               class="w-full h-full object-cover" alt="Gentle care"
-               onerror="this.classList.add('error');">
-          <div class="image-fallback-small">
-            <i class="fas fa-hand-holding-medical"></i>
-          </div>
+        <div class="relative mx-auto w-32 h-32 rounded-2xl overflow-hidden shadow-lg transform rotate-1 bg-gradient-to-br from-green-100 to-cyan-100 flex items-center justify-center">
+          <i class="fas fa-hand-holding-medical text-3xl text-green-600"></i>
         </div>
         <blockquote class="text-lg text-gray-700 italic leading-relaxed">
           "Wonderful with patients of all ages. We make visits feel comfortable and stress-free for everyone."

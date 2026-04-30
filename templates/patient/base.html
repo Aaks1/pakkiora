@@ -43,17 +43,20 @@
                         </div>
                     </div>
                     <div class="w-10 h-10 bg-indigo-600 text-white rounded-full flex items-center justify-center font-semibold shadow-lg">
-                        {{ user.first_name.0|upper }}
+                        {{ user.first_name.0|default:user.username.0|upper }}
                     </div>
                     <div class="flex items-center space-x-2">
                         <a href="{% url 'patient:change_password' %}" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-2 rounded-lg text-sm font-medium transition-colors">
                             <i class="fas fa-key mr-1"></i>
                             Change Password
                         </a>
-                        <a href="{% url 'accounts:logout' %}" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-md">
-                            <i class="fas fa-sign-out-alt mr-1"></i>
-                            Logout
-                        </a>
+                        <form method="post" action="{% url 'accounts:logout' %}">
+                            {% csrf_token %}
+                            <button type="submit" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-md">
+                                <i class="fas fa-sign-out-alt mr-1"></i>
+                                Logout
+                            </button>
+                        </form>
                     </div>
                 </div>
             </div>

@@ -2,6 +2,9 @@
 {% load static %}
 
 {% block title %}Add Doctor - Piki Ora Healthcare{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/admin_add_doctor.css' %}">
+{% endblock %}
 
 {% block content %}
 <div class="container mx-auto px-4 py-8">
@@ -302,65 +305,4 @@
     </div>
 </div>
 
-<style>
-.form-control {
-    width: 100%;
-    padding: 0.75rem;
-    border: 1px solid #d1d5db;
-    border-radius: 0.375rem;
-    font-size: 0.875rem;
-    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
-}
-
-.form-control:focus {
-    outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-.form-check-input {
-    width: 1rem;
-    height: 1rem;
-    border: 1px solid #d1d5db;
-    border-radius: 0.25rem;
-    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
-}
-
-.form-check-input:checked {
-    background-color: #3b82f6;
-    border-color: #3b82f6;
-}
-
-.text-red-500 {
-    color: #ef4444;
-}
-
-.text-gray-500 {
-    color: #6b7280;
-}
-
-.text-gray-600 {
-    color: #4b5563;
-}
-
-.text-gray-700 {
-    color: #374151;
-}
-
-.text-gray-800 {
-    color: #1f2937;
-}
-
-.bg-red-50 {
-    background-color: #fef2f2;
-}
-
-.border-red-200 {
-    border-color: #fecaca;
-}
-
-.text-red-700 {
-    color: #b91c1c;
-}
-</style>
 {% endblock %}

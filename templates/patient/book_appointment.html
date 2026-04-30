@@ -302,11 +302,19 @@
                     <div class="doctor-details">
                         <p class="text-sm text-gray-600 mb-1">
                             <i class="fas fa-clock mr-1"></i>
-                            9:00 AM - 5:00 PM (Default)
+                            {% if doctor.time_slots %}
+                                {{ doctor.time_slots }}
+                            {% else %}
+                                09:00,10:30,14:00 (Default)
+                            {% endif %}
                         </p>
                         <p class="text-sm text-gray-600">
                             <i class="fas fa-hourglass-half mr-1"></i>
-                            30 min slots (Default)
+                            {% if doctor.available_days %}
+                                {{ doctor.available_days|join:", "|title }}
+                            {% else %}
+                                Monday to Friday (Default)
+                            {% endif %}
                         </p>
                     </div>
                     <div class="mt-4">
@@ -336,7 +344,7 @@
                     <div class="date-card {% if selected_date_str == date|date:'Y-m-d' %}selected{% endif %}">
                         <div class="date-day">{{ date|date:'D' }}</div>
                         <div class="date-number">{{ date.day }}</div>
-                        <div class="date-doctors">{{ doctors|length }} doctors</div>
+                        <div class="date-doctors">{{ doctors|length }} available</div>
                         <div class="mt-2">
                             <form method="get" class="mb-0">
                                 <input type="hidden" name="doctor" value="{{ selected_doctor_id }}">

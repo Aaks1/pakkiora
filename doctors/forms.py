@@ -1,9 +1,7 @@
 from django import forms
 from django.core.validators import EmailValidator, RegexValidator
-from django.utils.safestring import mark_safe
 from django.contrib.auth.models import User
-from django.utils import timezone
-from .models import Doctor, Patient, DoctorAvailability
+from .models import Doctor, Patient
 
 
 class AddDoctorForm(forms.ModelForm):
@@ -174,128 +172,72 @@ class AddDoctorForm(forms.ModelForm):
         
         if commit:
             doctor.save()
-            
-            # Create DoctorAvailability entries for next 30 days
-            available_days = self.cleaned_data.get('available_days', [])
-            time_slots_str = self.cleaned_data.get('time_slots', '')
-            
-            if available_days and time_slots_str:
-                from datetime import datetime, timedelta
-                today = timezone.now().date()
-                slots = [s.strip() for s in time_slots_str.split(',') if s.strip()]
-                
-                for i in range(30):
-                    date = today + timedelta(days=i)
-                    day_name = date.strftime('%A').lower()
-                    
-                    if day_name in available_days:
-                        for slot in slots:
-                            try:
-                                time_obj = datetime.strptime(slot, '%H:%M').time()
-                                end_time = (datetime.combine(date, time_obj) + timedelta(minutes=30)).time()
-                                
-                                DoctorAvailability.objects.create(
-                                    doctor=doctor,
-                                    date=date,
-                                    start_time=time_obj,
-                                    end_time=end_time,
-                                    is_available=True
-                                )
-                            except ValueError:
-                                continue
         
         return doctor
 
 
+class DoctorUpdateForm(forms.ModelForm):
+    """Form for updating existing doctor profile data."""
+    available_days = forms.MultipleChoiceField(
+        choices=Doctor.DAY_CHOICES,
+        widget=forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input'}),
+        required=False
+    )
 
-
-
-
-class DoctorAvailabilityForm(forms.ModelForm):
-    """Form for managing doctor availability"""
-    
     class Meta:
-        model = DoctorAvailability
-        fields = ['date', 'is_available', 'notes']
+        model = Doctor
+        fields = [
+            'first_name',
+            'last_name',
+            'email',
+            'phone',
+            'address',
+            'specialization',
+            'qualification',
+            'experience_years',
+            'license_number',
+            'department',
+            'bio',
+            'available_days',
+            'time_slots',
+            'is_active',
+        ]
         widgets = {
-            'date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-            'is_available': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-            'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'first_name': forms.TextInput(attrs={'class': 'form-control', 'required': True}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control', 'required': True}),
+            'email': forms.EmailInput(attrs={'class': 'form-control', 'required': True}),
+            'phone': forms.TextInput(attrs={'class': 'form-control', 'required': True}),
+            'address': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'specialization': forms.TextInput(attrs={'class': 'form-control', 'required': True}),
+            'qualification': forms.TextInput(attrs={'class': 'form-control', 'required': True}),
+            'experience_years': forms.NumberInput(attrs={'class': 'form-control', 'min': 0}),
+            'license_number': forms.TextInput(attrs={'class': 'form-control', 'required': True}),
+            'department': forms.TextInput(attrs={'class': 'form-control'}),
+            'bio': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
+            'time_slots': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '09:00,10:30,14:00'}),
+            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
-    
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['date'].label = 'Date'
-        self.fields['is_available'].label = 'Available'
-        self.fields['notes'].label = 'Notes (Optional)'
-        self.fields['notes'].help_text = 'Optional notes for this date'
-    
-    def clean(self):
-        cleaned_data = super().clean()
-        date = cleaned_data.get('date')
-        
-        # Prevent creating availability for past dates
-        if date and date < timezone.now().date():
-            raise forms.ValidationError('Cannot set availability for past dates.')
-        
-        return cleaned_data
+        if self.instance and self.instance.pk:
+            self.fields['available_days'].initial = self.instance.available_days
+
+    def clean_time_slots(self):
+        time_slots = self.cleaned_data.get('time_slots', '')
+        if time_slots:
+            slots = [s.strip() for s in time_slots.split(',') if s.strip()]
+            for slot in slots:
+                try:
+                    from datetime import datetime
+                    datetime.strptime(slot, '%H:%M')
+                except ValueError:
+                    raise forms.ValidationError(f'Invalid time format: "{slot}". Use HH:MM format e.g. 09:00')
+        return time_slots
 
 
-class MultiDateAvailabilityForm(forms.Form):
-    """Form for managing multiple dates at once"""
-    doctor = forms.ModelChoiceField(
-        queryset=Doctor.objects.filter(is_active=True),
-        widget=forms.Select(attrs={'class': 'form-control'}),
-        empty_label="Select Doctor"
-    )
-    start_date = forms.DateField(
-        widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'})
-    )
-    end_date = forms.DateField(
-        widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'})
-    )
-    
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['doctor'].label = 'Doctor'
-        self.fields['start_date'].label = 'Start Date'
-        self.fields['end_date'].label = 'End Date'
-    
-    def clean(self):
-        cleaned_data = super().clean()
-        start_date = cleaned_data.get('start_date')
-        end_date = cleaned_data.get('end_date')
-        
-        if start_date and end_date:
-            if end_date < start_date:
-                raise forms.ValidationError("End date must be after start date.")
-            
-            # Prevent creating availability for past dates
-            if start_date < timezone.now().date():
-                raise forms.ValidationError("Cannot set availability for past dates.")
-        
-        return cleaned_data
-    
-    def save_availability(self):
-        """Save availability for the date range"""
-        doctor = self.cleaned_data['doctor']
-        start_date = self.cleaned_data['start_date']
-        end_date = self.cleaned_data['end_date']
-        
-        availabilities_created = []
-        current_date = start_date
-        
-        while current_date <= end_date:
-            availability, created = DoctorAvailability.objects.get_or_create(
-                doctor=doctor,
-                date=current_date,
-                defaults={'is_available': True}
-            )
-            if created:
-                availabilities_created.append(availability)
-            current_date += timezone.timedelta(days=1)
-        
-        return availabilities_created
+
+
 
 
 class PatientRegistrationForm(forms.ModelForm):

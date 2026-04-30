@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
 from datetime import date
 
 class Appointment(models.Model):
@@ -24,6 +25,14 @@ class Appointment(models.Model):
 
     def __str__(self):
         return f"Appointment: {self.patient.username} with Dr. {self.doctor.first_name} on {self.date} at {self.start_time}"
+
+    def clean(self):
+        if not self.patient_id or not self.doctor_id:
+            raise ValidationError("Patient and doctor are required.")
+        if not self.start_time or not self.end_time:
+            raise ValidationError("Start and end times are required.")
+        if self.end_time <= self.start_time:
+            raise ValidationError("End time must be later than start time.")
 
     class Meta:
         verbose_name = 'Appointment'
