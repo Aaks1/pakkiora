@@ -44,42 +44,8 @@ def generate_default_time_slots(date):
 # -----------------------------
 @login_required
 def patient_dashboard(request):
-    user = request.user
-    today = timezone.now().date()
-
-    patient, created = Patient.objects.get_or_create(
-        user=user,
-        defaults={
-            "first_name": user.first_name or "Unknown",
-            "last_name": user.last_name or "User",
-        }
-    )
-
-    # Get appointments for this patient
-    appointments = Appointment.objects.filter(
-        patient=patient
-    ).select_related('doctor').order_by('-date', '-start_time')
-
-    upcoming_appointments = appointments.filter(
-        date__gte=today,
-        status='confirmed'
-    )
-
-    past_appointments = appointments.filter(
-        date__lt=today
-    )[:5]
-
-    context = {
-        'patient': patient,
-        'upcoming_appointments': upcoming_appointments,
-        'past_appointments': past_appointments,
-        'total_appointments': appointments.count(),
-        'upcoming_count': upcoming_appointments.count(),
-        'past_count': past_appointments.count(),
-        'today': today,
-    }
-
-    return render(request, 'patient/dashboard.html', context)
+    """Redirect to doctors page since dashboard is removed"""
+    return redirect('patient:doctors')
 
 
 
@@ -114,11 +80,59 @@ def doctor_list(request):
 # -----------------------------
 @login_required
 def doctor_detail(request, doctor_id):
+    """Doctor detail page with booking functionality"""
     doctor = get_object_or_404(Doctor, id=doctor_id, is_active=True)
     
-    # Redirect to new slot-based system
+    # Get patient
+    patient, _ = Patient.objects.get_or_create(
+        user=request.user,
+        defaults={
+            "first_name": request.user.first_name or "Unknown",
+            "last_name": request.user.last_name or "User",
+        }
+    )
+    
+    # Get current and next week dates
     today = timezone.now().date()
-    return redirect('patient:doctor_slots', doctor_id=doctor_id) + f'?date={today.strftime("%Y-%m-%d")}'
+    current_week_start = today - timedelta(days=today.weekday())
+    current_week_end = current_week_start + timedelta(days=6)
+    next_week_start = current_week_start + timedelta(days=7)
+    next_week_end = next_week_start + timedelta(days=6)
+    
+    # Get available dates for this doctor
+    all_dates = []
+    for i in range(14):  # Current week + next week
+        date = current_week_start + timedelta(days=i)
+        if date >= today:
+            all_dates.append(date)
+    
+    # Get doctor availability for these dates
+    availabilities = DoctorAvailability.objects.filter(
+        doctor=doctor,
+        date__in=all_dates,
+        is_available=True
+    ).order_by('date')
+    
+    # Get doctor's appointments for availability checking
+    doctor_appointments = Appointment.objects.filter(
+        doctor=doctor,
+        date__in=availabilities.values_list('date', flat=True),
+        status='confirmed'
+    ).select_related('patient')
+    
+    context = {
+        'doctor': doctor,
+        'patient': patient,
+        'availabilities': availabilities,
+        'doctor_appointments': doctor_appointments,
+        'today': today,
+        'current_week_start': current_week_start,
+        'current_week_end': current_week_end,
+        'next_week_start': next_week_start,
+        'next_week_end': next_week_end,
+    }
+    
+    return render(request, 'patient/doctors/detail.html', context)
 
 
 # -----------------------------

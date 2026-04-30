@@ -72,124 +72,48 @@
         </div>
     </div>
 
-    <!-- Clean Time Slot Booking Interface -->
+    <!-- Booking Section -->
     <div class="bg-white rounded-lg shadow-md overflow-hidden">
-        <!-- Simple Header -->
+        <!-- Header -->
         <div class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6">
-            <h2 class="text-2xl font-bold">Book Your Appointment</h2>
-            <p class="text-blue-100 mt-1">Select a date and time slot</p>
+            <h2 class="text-2xl font-bold">Book Appointment</h2>
+            <p class="text-blue-100 mt-1">Schedule your consultation with Dr. {{ doctor.first_name }}</p>
         </div>
 
         <div class="p-6">
-            {% if available_slots %}
-            <!-- Professional Date Selector -->
+            {% if availabilities %}
             <div class="mb-6">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-semibold text-gray-900">Select Appointment Date</h3>
-                    <span class="text-sm text-gray-500">
-                        <i class="fas fa-calendar-alt mr-1"></i>
-                        {{ available_slots|length }} days available
-                    </span>
-                </div>
-                <div class="flex flex-wrap gap-3">
-                    {% for day_data in available_slots %}
-                    <button onclick="selectDate('{{ day_data.date|date:'Y-m-d' }}')" 
-                            id="date-{{ day_data.date|date:'Y-m-d' }}"
-                            class="relative px-4 py-3 {% if forloop.first %}bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-lg{% else %}bg-white text-gray-700 border-2 border-gray-200 hover:border-indigo-300 hover:shadow-md{% endif %} rounded-xl transition-all duration-200 transform hover:scale-105">
-                        <div class="text-center">
-                            <div class="font-bold text-lg {% if forloop.first %}text-white{% else %}text-gray-900{% endif %}">
-                                {{ day_data.date|date:"d" }}
-                            </div>
-                            <div class="text-sm {% if forloop.first %}text-indigo-100{% else %}text-gray-600{% endif %}">
-                                {{ day_data.date|date:"M" }}
-                            </div>
-                            <div class="text-xs {% if forloop.first %}text-indigo-200{% else %}text-gray-500{% endif %} mt-1">
-                                {{ day_data.day_name_short }}
-                            </div>
-                            <div class="mt-2">
-                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium {% if forloop.first %}bg-white bg-opacity-20 text-white{% else %}bg-indigo-50 text-indigo-700{% endif %}">
-                                    <i class="fas fa-clock mr-1 text-xs"></i>
-                                    {{ day_data.slots|length }} slots
-                                </span>
-                            </div>
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Available Dates</h3>
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
+                    {% for availability in availabilities %}
+                    <div class="text-center p-3 bg-green-50 border border-green-200 rounded-lg">
+                        <div class="text-sm text-green-600 font-medium">
+                            {{ availability.date|date:"D" }}
                         </div>
-                        <!-- Selection Indicator -->
-                        {% if forloop.first %}
-                        <div class="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full animate-pulse"></div>
-                        {% endif %}
-                    </button>
+                        <div class="text-lg font-bold text-green-800">
+                            {{ availability.date|date:"d" }}
+                        </div>
+                        <div class="text-xs text-green-600">
+                            {{ availability.date|date:"M" }}
+                        </div>
+                    </div>
                     {% endfor %}
                 </div>
             </div>
 
-            <!-- Time Slots for Selected Date -->
-            {% for day_data in available_slots %}
-            <div id="slots-{{ day_data.date|date:'Y-m-d' }}" class="time-slots-container {% if not forloop.first %}hidden{% endif %}">
-                <div class="mb-4">
-                    <h3 class="text-lg font-semibold text-gray-900">
-                        {{ day_data.day_name }}, {{ day_data.date|date:"F d, Y" }}
-                    </h3>
-                    <p class="text-sm text-gray-600">Available time slots (30 minutes each)</p>
-                </div>
-
-                <!-- Professional Time Slot Grid -->
-                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                    {% for slot in day_data.slots %}
-                    <a href="{{ slot.booking_url }}" 
-                       class="relative group bg-white border border-gray-200 rounded-xl p-3 hover:border-indigo-500 hover:shadow-lg transition-all duration-200 text-center overflow-hidden">
-                        <!-- Available Badge -->
-                        <div class="absolute top-2 right-2">
-                            <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                        </div>
-                        
-                        <!-- Time Display -->
-                        <div class="font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors mb-1">
-                            {{ slot.time|time:"g:i A" }}
-                        </div>
-                        
-                        <!-- Duration -->
-                        <div class="text-xs text-gray-500 mb-2">
-                            30 min
-                        </div>
-                        
-                        <!-- Status Badge -->
-                        <div class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-200">
-                            <i class="fas fa-check-circle mr-1 text-xs"></i>
-                            Available
-                        </div>
-                        
-                        <!-- Hover Overlay -->
-                        <div class="absolute inset-0 bg-indigo-600 bg-opacity-0 group-hover:bg-opacity-5 transition-all duration-200 rounded-xl"></div>
-                        
-                        <!-- Booking Hint -->
-                        <div class="absolute bottom-0 left-0 right-0 bg-indigo-600 text-white text-xs py-1 transform translate-y-full group-hover:translate-y-0 transition-transform duration-200">
-                            <i class="fas fa-calendar-plus mr-1"></i>
-                            Book Now
-                        </div>
-                    </a>
-                    {% endfor %}
-                </div>
+            <div class="flex justify-center">
+                <a href="{% url 'patient:book_appointment' %}?doctor={{ doctor.id }}" 
+                   class="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold">
+                    <i class="fas fa-calendar-plus mr-2"></i>Book Now
+                </a>
             </div>
-            {% endfor %}
-
             {% else %}
-            <!-- No Available Slots -->
-            <div class="text-center py-12">
-                <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <i class="fas fa-calendar-times text-gray-300 text-3xl"></i>
-                </div>
-                <h3 class="text-xl font-semibold text-gray-900 mb-2">No Available Slots</h3>
-                <p class="text-gray-500 mb-6">No appointment slots are available for the next 14 days.</p>
-                
-                <div class="flex justify-center space-x-4">
-                    <a href="{% url 'patient:booking' %}" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors">
-                        <i class="fas fa-search mr-2"></i>Check Other Doctors
-                    </a>
-                </div>
+            <div class="text-center py-8">
+                <i class="fas fa-calendar-times text-4xl text-gray-400 mb-4"></i>
+                <p class="text-gray-600 mb-4">No available dates for booking</p>
+                <p class="text-sm text-gray-500">Please check back later or contact the clinic</p>
             </div>
             {% endif %}
         </div>
     </div>
-
-    
 {% endblock %}

@@ -1,7 +1,7 @@
 {% extends 'patient/base.html' %}
 {% load static %}
 
-{% block title %}Patient Dashboard - DoctorX Healthcare{% endblock %}
+{% block title %}Find Doctors - Piki Ora Healthcare{% endblock %}
 
 {% block content %}
 <div class="container mx-auto px-4 py-8">
@@ -9,156 +9,14 @@
     <div class="bg-white rounded-lg shadow-md p-6 mb-8">
         <div class="flex justify-between items-center">
             <div>
-                <h1 class="text-3xl font-bold text-gray-800">Welcome back, {{ patient.first_name }}!</h1>
-                <p class="text-gray-600 mt-2">Manage your appointments and book new ones</p>
+                <h1 class="text-3xl font-bold text-gray-800">Find a Doctor</h1>
+                <p class="text-gray-600 mt-2">Browse our doctors and book appointments</p>
             </div>
             <div class="text-right">
                 <a href="{% url 'patient:book_appointment' %}" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors">
-                    <i class="fas fa-plus mr-2"></i>Book Appointment
+                    <i class="fas fa-plus mr-2"></i>Quick Book
                 </a>
             </div>
-        </div>
-    </div>
-
-    <!-- Date Selection Section -->
-    <div class="bg-white rounded-lg shadow-md p-6 mb-8">
-        <h2 class="text-xl font-semibold text-gray-800 mb-4">Book an Appointment</h2>
-        
-        <form method="get" class="mb-6">
-            <div class="flex items-center space-x-4">
-                <div class="flex-1">
-                    <label for="date" class="block text-sm font-medium text-gray-700 mb-2">Select Date</label>
-                    <input type="date" 
-                           id="date" 
-                           name="date" 
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                           value="{{ selected_date|date:'Y-m-d' }}"
-                           min="{{ today|date:'Y-m-d' }}"
-                           required>
-                </div>
-                <div class="pt-6">
-                    <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition duration-200">
-                        <i class="fas fa-search mr-2"></i>Find Available Doctors
-                    </button>
-                </div>
-            </div>
-        </form>
-
-        <!-- Available Doctors -->
-        {% if selected_date %}
-        <div class="border-t pt-6">
-            <h3 class="text-lg font-semibold text-gray-800 mb-4">
-                Available Doctors on {{ selected_date|date:'F j, Y' }}
-            </h3>
-            
-            {% if schedules %}
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {% for schedule in schedules %}
-                <div class="border rounded-lg p-4 hover:shadow-lg transition duration-200">
-                    <div class="flex items-center mb-3">
-                        <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                            <i class="fas fa-user-md text-blue-600"></i>
-                        </div>
-                        <div>
-                            <h4 class="font-semibold text-gray-800">
-                                Dr. {{ schedule.doctor.first_name }} {{ schedule.doctor.last_name }}
-                            </h4>
-                            <p class="text-sm text-gray-600">{{ schedule.doctor.specialization }}</p>
-                        </div>
-                    </div>
-                    
-                    <div class="text-sm text-gray-600 mb-3">
-                        <i class="fas fa-clock mr-1"></i>
-                        {{ schedule.start_time }} - {{ schedule.end_time }}
-                        <span class="ml-2">({{ schedule.slot_duration }} min slots)</span>
-                    </div>
-                    
-                    <a href="{% url 'patient:doctor_slots' schedule.doctor.id %}?date={{ selected_date|date:'Y-m-d' }}" 
-                       class="w-full bg-blue-600 text-white text-center py-2 rounded-md hover:bg-blue-700 transition duration-200">
-                        View Available Slots
-                    </a>
-                </div>
-                {% endfor %}
-            </div>
-            {% else %}
-            <div class="text-center py-8">
-                <i class="fas fa-calendar-times text-4xl text-gray-400 mb-4"></i>
-                <p class="text-gray-600">No doctors available on this date</p>
-                <p class="text-sm text-gray-500 mt-2">Please try a different date</p>
-            </div>
-            {% endif %}
-        </div>
-        {% endif %}
-    </div>
-
-    <!-- Appointments Section -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <!-- Upcoming Appointments -->
-        <div class="bg-white rounded-lg shadow-md p-6">
-            <h2 class="text-xl font-semibold text-gray-800 mb-4">Upcoming Appointments</h2>
-            
-            {% if upcoming_appointments %}
-            <div class="space-y-4">
-                {% for appointment in upcoming_appointments %}
-                <div class="border-l-4 border-blue-500 pl-4 py-2">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <h4 class="font-semibold text-gray-800">
-                                Dr. {{ appointment.doctor.first_name }} {{ appointment.doctor.last_name }}
-                            </h4>
-                            <p class="text-sm text-gray-600">{{ appointment.doctor.specialization }}</p>
-                            <p class="text-sm text-gray-600 mt-1">
-                                <i class="fas fa-calendar mr-1"></i>{{ appointment.date|date:'F j, Y' }}
-                                <i class="fas fa-clock ml-2 mr-1"></i>{{ appointment.start_time }}
-                            </p>
-                        </div>
-                        <span class="px-2 py-1 text-xs font-semibold text-green-800 bg-green-100 rounded">
-                            {{ appointment.status|title }}
-                        </span>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-            {% else %}
-            <div class="text-center py-8">
-                <i class="fas fa-calendar-check text-4xl text-gray-400 mb-4"></i>
-                <p class="text-gray-600">No upcoming appointments</p>
-            </div>
-            {% endif %}
-        </div>
-
-        <!-- Past Appointments -->
-        <div class="bg-white rounded-lg shadow-md p-6">
-            <h2 class="text-xl font-semibold text-gray-800 mb-4">Recent Appointments</h2>
-            
-            {% if past_appointments %}
-            <div class="space-y-4">
-                {% for appointment in past_appointments %}
-                <div class="border-l-4 border-gray-300 pl-4 py-2">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <h4 class="font-semibold text-gray-800">
-                                Dr. {{ appointment.doctor.first_name }} {{ appointment.doctor.last_name }}
-                            </h4>
-                            <p class="text-sm text-gray-600">{{ appointment.doctor.specialization }}</p>
-                            <p class="text-sm text-gray-600 mt-1">
-                                <i class="fas fa-calendar mr-1"></i>{{ appointment.date|date:'F j, Y' }}
-                                <i class="fas fa-clock ml-2 mr-1"></i>{{ appointment.start_time }}
-                            </p>
-                        </div>
-                        <span class="px-2 py-1 text-xs font-semibold text-gray-800 bg-gray-100 rounded">
-                            {{ appointment.status|title }}
-                        </span>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-            {% else %}
-            <div class="text-center py-8">
-                <i class="fas fa-history text-4xl text-gray-400 mb-4"></i>
-                <p class="text-gray-600">No past appointments</p>
-            </div>
-            {% endif %}
         </div>
     </div>
 </div>

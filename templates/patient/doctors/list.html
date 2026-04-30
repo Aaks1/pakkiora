@@ -64,6 +64,12 @@
                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {% if doctor.is_active %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
                         {% if doctor.is_active %}Available{% else %}Unavailable{% endif %}
                     </span>
+                    {% if doctor.is_active %}
+                    <a href="{% url 'patient:doctor_detail' doctor.id %}" 
+                       class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                        <i class="fas fa-calendar-plus mr-1"></i>Book Now
+                    </a>
+                    {% endif %}
                 </div>
             </div>
         </div>
