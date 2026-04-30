@@ -151,11 +151,6 @@
                     <h1 class="text-2xl font-bold text-gray-900">Dr. {{ doctor.first_name }} {{ doctor.last_name }}</h1>
                     <p class="text-gray-600 mt-1">{{ doctor.specialization }}</p>
                 </div>
-                <a href="{% url 'doctor_schedule_list' doctor.id %}" 
-                   class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
-                    <i class="fas fa-calendar-alt mr-2"></i>
-                    Manage Schedule
-                </a>
             </div>
         </div>
 
@@ -368,14 +363,7 @@
                     <p class="text-gray-500">
                         Dr. {{ doctor.first_name }} {{ doctor.last_name }} doesn't have any appointments scheduled yet.
                     </p>
-                    <div class="mt-6">
-                        <a href="{% url 'doctor_schedule_list' doctor.id %}" 
-                           class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
-                            <i class="fas fa-calendar-alt mr-2"></i>
-                            Set Up Schedule
-                        </a>
-                    </div>
-                </div>
+                                    </div>
             {% endif %}
         </div>
     </main>
