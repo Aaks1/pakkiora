@@ -30,13 +30,8 @@
         <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
             <div class="p-6">
                 <div class="flex items-center mb-4">
-                    <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
-                        {% if doctor.profile_picture %}
-                            <img src="{{ doctor.profile_picture.url }}" alt="{{ doctor.first_name }}" 
-                                 class="w-16 h-16 rounded-full object-cover">
-                        {% else %}
-                            <i class="fas fa-user-md text-gray-400 text-2xl"></i>
-                        {% endif %}
+                    <div class="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-700 font-semibold">
+                        {{ doctor.first_name.0|upper }}{{ doctor.last_name.0|upper }}
                     </div>
                     <div class="ml-4">
                         <h3 class="font-semibold text-gray-900">Dr. {{ doctor.first_name }} {{ doctor.last_name }}</h3>

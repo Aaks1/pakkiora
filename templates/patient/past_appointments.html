@@ -110,13 +110,8 @@
                             <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
                                 <div class="flex-1">
                                     <div class="flex items-start space-x-4">
-                                        <div class="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
-                                            {% if appointment.doctor.profile_picture %}
-                                                <img src="{{ appointment.doctor.profile_picture.url }}" alt="{{ appointment.doctor.first_name }}" 
-                                                     class="w-12 h-12 rounded-full object-cover">
-                                            {% else %}
-                                                <i class="fas fa-user-md text-gray-400 text-xl"></i>
-                                            {% endif %}
+                                        <div class="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center flex-shrink-0 text-indigo-700 font-semibold">
+                                            {{ appointment.doctor.first_name.0|upper }}{{ appointment.doctor.last_name.0|upper }}
                                         </div>
                                         <div class="flex-1 min-w-0">
                                             <div class="flex items-center space-x-3 mb-2">

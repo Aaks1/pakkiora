@@ -16,6 +16,14 @@ from doctors.models import Doctor, Patient, DoctorAvailability
 from appointments.models import Appointment
 
 
+def require_patient_user(request):
+    """Allow only non-staff users in patient-facing flows."""
+    if request.user.is_staff or request.user.is_superuser:
+        messages.error(request, "Please use a patient account for booking and patient actions.")
+        return False
+    return True
+
+
 def parse_doctor_time_slots(doctor, selected_date):
     """Return normalized slot objects from doctor's configured time slots."""
     raw_slots = [s.strip() for s in (doctor.time_slots or '').split(',') if s.strip()]
@@ -75,45 +83,7 @@ def generate_default_time_slots(date):
 @login_required
 def patient_dashboard(request):
     """Patient dashboard aligned with booking flow."""
-    patient, _ = Patient.objects.get_or_create(
-        user=request.user,
-        defaults={
-            "first_name": request.user.first_name or "Unknown",
-            "last_name": request.user.last_name or "User",
-        }
-    )
-
-    today = timezone.now().date()
-    appointments = Appointment.objects.filter(patient=request.user).select_related('doctor')
-    upcoming_appointments = appointments.filter(date__gte=today, status='BOOKED').order_by('date', 'start_time')[:5]
-    recent_appointments = appointments.order_by('-date', '-start_time')[:5]
-    doctor_search = request.GET.get('doctor_search', '').strip()
-    available_doctors_qs = Doctor.objects.filter(is_active=True)
-    if doctor_search:
-        available_doctors_qs = available_doctors_qs.filter(
-            Q(first_name__icontains=doctor_search) |
-            Q(last_name__icontains=doctor_search) |
-            Q(specialization__icontains=doctor_search) |
-            Q(department__icontains=doctor_search)
-        )
-
-    available_doctors_qs = available_doctors_qs.order_by('first_name', 'last_name')
-    doctors_paginator = Paginator(available_doctors_qs, 6)
-    doctor_page = request.GET.get('doctor_page')
-    available_doctors = doctors_paginator.get_page(doctor_page)
-
-    context = {
-        "patient": patient,
-        "total_appointments": appointments.count(),
-        "upcoming_count": appointments.filter(date__gte=today, status='BOOKED').count(),
-        "completed_count": appointments.filter(status='COMPLETED').count(),
-        "cancelled_count": appointments.filter(status='CANCELLED').count(),
-        "upcoming_appointments": upcoming_appointments,
-        "recent_appointments": recent_appointments,
-        "available_doctors": available_doctors,
-        "doctor_search": doctor_search,
-    }
-    return render(request, 'patient/dashboard.html', context)
+    return redirect('patient:doctors')
 
 
 
@@ -125,6 +95,9 @@ def patient_dashboard(request):
 # -----------------------------
 @login_required
 def doctor_list(request):
+    if not require_patient_user(request):
+        return redirect('admin_dashboard')
+
     specialization = request.GET.get('specialization')
 
     doctors = Doctor.objects.filter(is_active=True)
@@ -149,6 +122,9 @@ def doctor_list(request):
 @login_required
 def doctor_detail(request, doctor_id):
     """Doctor detail + recurring date/slot booking page."""
+    if not require_patient_user(request):
+        return redirect('admin_dashboard')
+
     doctor = get_object_or_404(Doctor, id=doctor_id, is_active=True)
 
     # Ensure patient profile exists for booking relation
@@ -242,6 +218,9 @@ def doctor_book_appointment(request, doctor_id):
 # -----------------------------
 @login_required
 def appointment_detail(request, appointment_id):
+    if not require_patient_user(request):
+        return redirect('admin_dashboard')
+
     appointment = get_object_or_404(
         Appointment,
         id=appointment_id,
@@ -264,6 +243,9 @@ def appointment_detail(request, appointment_id):
 @login_required
 def edit_appointment(request, appointment_id):
     """Allow patient to edit date/time for booked appointments."""
+    if not require_patient_user(request):
+        return redirect('admin_dashboard')
+
     appointment = get_object_or_404(
         Appointment,
         id=appointment_id,
@@ -339,6 +321,9 @@ def edit_appointment(request, appointment_id):
 # -----------------------------
 @login_required
 def cancel_appointment(request, appointment_id):
+    if not require_patient_user(request):
+        return redirect('admin_dashboard')
+
     appointment = get_object_or_404(
         Appointment,
         id=appointment_id,
@@ -394,6 +379,9 @@ def change_password(request):
 # -----------------------------
 @login_required
 def patient_profile(request):
+    if not require_patient_user(request):
+        return redirect('admin_dashboard')
+
     user = request.user
     
     patient, _ = Patient.objects.get_or_create(
@@ -423,6 +411,9 @@ def patient_profile(request):
 @login_required
 def past_appointments(request):
     """Show all patient appointments (past, present, cancelled)"""
+    if not require_patient_user(request):
+        return redirect('admin_dashboard')
+
     user = request.user
     
     # Get all appointments for this patient
@@ -487,6 +478,9 @@ class AppointmentDetailView(DetailView):
 @login_required
 def book_appointment(request):
     """Patient appointment booking with automatic slot generation"""
+    if not require_patient_user(request):
+        return redirect('admin_dashboard')
+
     today = timezone.now().date()
     
     # Get patient

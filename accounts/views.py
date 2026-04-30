@@ -64,7 +64,7 @@ def login_view(request):
                 try:
                     patient = Patient.objects.select_related('user').get(user=user)
                     safe_message(request, 'success', f'Welcome back, {patient.first_name}!')
-                    return redirect('patient:dashboard')
+                    return redirect('patient:doctors')
                 except Patient.DoesNotExist:
                     # Regular user without patient profile
                     safe_message(request, 'error', 'No patient profile found. Please complete your registration.')
@@ -440,7 +440,9 @@ def appointment_management(request):
     status_filter = request.GET.get('status', '')
     doctor_filter = request.GET.get('doctor', '')
     
-    appointments = Appointment.objects.all().select_related('patient', 'doctor').order_by('-date', '-start_time')
+    appointments = Appointment.objects.filter(
+        Q(patient__isnull=True) | Q(patient__is_staff=False)
+    ).select_related('patient', 'doctor').order_by('-date', '-start_time')
     
     if search_query:
         appointments = appointments.filter(
