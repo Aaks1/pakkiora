@@ -69,7 +69,8 @@ class ScheduleGeneratorService:
                 is_active=True
             )
         except DoctorSchedule.DoesNotExist:
-            raise ValueError(f"No schedule template found for doctor {doctor} on weekday {weekday_mapping[weekday]}")
+            # Return empty list instead of raising error - doctor has no schedule for this day
+            return []
         
         # Generate slots
         slots = self._generate_slots_for_schedule(schedule, doctor, target_date)

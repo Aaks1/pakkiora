@@ -110,7 +110,11 @@ def doctor_detail(request, doctor_id):
     for i in range(7):
         target_date = today + timedelta(days=i)
 
-        schedule_service.generate_daily_slots(doctor, target_date)
+        try:
+            schedule_service.generate_daily_slots(doctor, target_date)
+        except ValueError:
+            # Doctor has no schedule for this day, continue
+            continue
 
         slot_count = DoctorTimeSlot.objects.filter(
             doctor=doctor,
