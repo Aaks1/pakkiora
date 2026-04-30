@@ -397,7 +397,7 @@ def doctor_create(request):
     else:
         form = AddDoctorForm()
     
-    return render(request, 'admin/doctor_create.html', {'form': form, 'user': request.user})
+    return render(request, 'admin/add_doctor.html', {'form': form, 'user': request.user})
 
 @login_required
 @user_passes_test(check_is_admin)
