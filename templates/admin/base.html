@@ -30,35 +30,53 @@
 </header>
 
 <div class="flex min-h-screen">
-    <aside class="w-64 bg-white shadow-lg">
-        <nav class="p-4 space-y-6">
+    <aside class="w-72 bg-white shadow-lg border-r border-gray-200">
+        <nav class="p-4 space-y-5">
             <div>
                 <h3 class="text-xs uppercase text-gray-400 mb-3 font-semibold">Dashboard</h3>
-                <a href="{% url 'admin_dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %}">Dashboard</a>
+                <a href="{% url 'admin_dashboard' %}" class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors {% if request.resolver_match.url_name == 'admin_dashboard' %}bg-blue-50 text-blue-700 font-semibold{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
+                    <i class="fas fa-gauge-high w-4"></i><span>Dashboard</span>
+                </a>
             </div>
             <div>
                 <h3 class="text-xs uppercase text-gray-400 mb-3 font-semibold">Admin Management</h3>
-                <a href="{% url 'admin_list' %}" class="nav-link">Admin Users</a>
-                <a href="{% url 'admin_create' %}" class="nav-link">Create Admin</a>
+                <a href="{% url 'admin_list' %}" class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors {% if request.resolver_match.url_name == 'admin_list' or request.resolver_match.url_name == 'admin_edit' %}bg-blue-50 text-blue-700 font-semibold{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
+                    <i class="fas fa-user-shield w-4"></i><span>Admin Users</span>
+                </a>
+                <a href="{% url 'admin_create' %}" class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors {% if request.resolver_match.url_name == 'admin_create' %}bg-blue-50 text-blue-700 font-semibold{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
+                    <i class="fas fa-user-plus w-4"></i><span>Create Admin</span>
+                </a>
             </div>
             <div>
                 <h3 class="text-xs uppercase text-gray-400 mb-3 font-semibold">Doctor Management</h3>
-                <a href="{% url 'doctor_list' %}" class="nav-link">Doctors List</a>
-                <a href="{% url 'add_doctor' %}" class="nav-link">Add Doctor</a>
+                <a href="{% url 'doctor_list' %}" class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors {% if request.resolver_match.url_name == 'doctor_list' or request.resolver_match.url_name == 'doctor_edit' %}bg-blue-50 text-blue-700 font-semibold{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
+                    <i class="fas fa-user-doctor w-4"></i><span>Doctors List</span>
+                </a>
+                <a href="{% url 'add_doctor' %}" class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors {% if request.resolver_match.url_name == 'add_doctor' %}bg-blue-50 text-blue-700 font-semibold{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
+                    <i class="fas fa-plus w-4"></i><span>Add Doctor</span>
+                </a>
             </div>
             <div>
                 <h3 class="text-xs uppercase text-gray-400 mb-3 font-semibold">Appointments</h3>
-                <a href="{% url 'admin_appointment_management' %}" class="nav-link">All Appointments</a>
-                <a href="{% url 'slot_management' %}" class="nav-link">Manage Slots</a>
+                <a href="{% url 'admin_appointment_management' %}" class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors {% if request.resolver_match.url_name == 'admin_appointment_management' or request.resolver_match.url_name == 'admin_appointment_detail' or request.resolver_match.url_name == 'admin_appointment_edit' %}bg-blue-50 text-blue-700 font-semibold{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
+                    <i class="fas fa-calendar-check w-4"></i><span>All Appointments</span>
+                </a>
+                <a href="{% url 'slot_management' %}" class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors {% if request.resolver_match.url_name == 'slot_management' or request.resolver_match.url_name == 'slot_edit' %}bg-blue-50 text-blue-700 font-semibold{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
+                    <i class="fas fa-clock w-4"></i><span>Manage Slots</span>
+                </a>
             </div>
             <div>
                 <h3 class="text-xs uppercase text-gray-400 mb-3 font-semibold">Users</h3>
-                <a href="{% url 'user_management' %}" class="nav-link">Users List</a>
+                <a href="{% url 'user_management' %}" class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors {% if request.resolver_match.url_name == 'user_management' or request.resolver_match.url_name == 'user_detail' or request.resolver_match.url_name == 'user_edit' %}bg-blue-50 text-blue-700 font-semibold{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
+                    <i class="fas fa-users w-4"></i><span>Users List</span>
+                </a>
             </div>
             <div>
                 <form method="post" action="{% url 'accounts:logout' %}">
                     {% csrf_token %}
-                    <button type="submit" class="nav-link text-left w-full text-red-600 hover:bg-red-50">Logout</button>
+                    <button type="submit" class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-left w-full text-red-600 hover:bg-red-50">
+                        <i class="fas fa-right-from-bracket w-4"></i><span>Logout</span>
+                    </button>
                 </form>
             </div>
         </nav>

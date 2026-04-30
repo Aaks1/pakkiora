@@ -7,6 +7,7 @@ from django.contrib.auth.models import User
 from django.db.models import Q
 from django.utils import timezone
 from datetime import datetime, date, timedelta
+from functools import wraps
 from .models import UserProfile, AdminProfile
 from doctors.models import Doctor, Patient, DoctorAvailability
 from appointments.models import Appointment
@@ -198,10 +199,22 @@ def patient_dashboard(request):
 # Admin Views
 def check_is_admin(user):
     """Check if user is admin (staff)"""
-    return user.is_staff
+    return user.is_authenticated and user.is_active and (user.is_staff or user.is_superuser)
 
-@login_required
-@user_passes_test(check_is_admin)
+
+def admin_required(view_func):
+    """Strict admin guard with friendly redirect for non-admin users."""
+    @wraps(view_func)
+    def _wrapped_view(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect('accounts:login')
+        if not check_is_admin(request.user):
+            safe_message(request, 'error', 'Admin access required for this page.')
+            return redirect('home')
+        return view_func(request, *args, **kwargs)
+    return _wrapped_view
+
+@admin_required
 def admin_dashboard(request):
     """Main admin dashboard - optimized for performance"""
     ensure_default_superuser()
@@ -243,8 +256,7 @@ def admin_dashboard(request):
     }
     return render(request, 'admin/dashboard.html', context)
 
-@login_required
-@user_passes_test(check_is_admin)
+@admin_required
 def admin_list(request):
     """List all admin users - optimized for performance"""
     ensure_default_superuser()
@@ -268,8 +280,7 @@ def admin_list(request):
     
     return render(request, 'admin/admin_list.html', {'admins': admins, 'user': request.user})
 
-@login_required
-@user_passes_test(check_is_admin)
+@admin_required
 def admin_create(request):
     """Create new admin user"""
     ensure_default_superuser()
@@ -306,8 +317,7 @@ def admin_create(request):
     
     return render(request, 'admin/admin_create.html', {'form': form, 'user': request.user})
 
-@login_required
-@user_passes_test(check_is_admin)
+@admin_required
 def admin_edit(request, admin_id):
     """Edit admin user"""
     ensure_default_superuser()
@@ -348,8 +358,7 @@ def admin_edit(request, admin_id):
     
     return render(request, 'admin/admin_edit.html', {'form': form, 'admin': admin, 'user': request.user})
 
-@login_required
-@user_passes_test(check_is_admin)
+@admin_required
 def admin_delete(request, admin_id):
     """Delete admin user"""
     ensure_default_superuser()
@@ -372,8 +381,7 @@ def admin_delete(request, admin_id):
     # Redirect to admin list if not POST
     return redirect('admin_list')
 
-@login_required
-@user_passes_test(check_is_admin)
+@admin_required
 def doctor_list(request):
     """List all doctors - optimized for performance"""
     # Apply search filter first to reduce dataset
@@ -396,8 +404,7 @@ def doctor_list(request):
     
     return render(request, 'admin/doctor_list.html', {'doctors': doctors, 'user': request.user})
 
-@login_required
-@user_passes_test(check_is_admin)
+@admin_required
 def doctor_edit(request, doctor_id):
     """Edit doctor"""
     doctor = get_object_or_404(Doctor, id=doctor_id)
@@ -413,8 +420,7 @@ def doctor_edit(request, doctor_id):
     
     return render(request, 'admin/doctor_edit.html', {'form': form, 'doctor': doctor, 'user': request.user})
 
-@login_required
-@user_passes_test(check_is_admin)
+@admin_required
 def doctor_delete(request, doctor_id):
     """Delete doctor"""
     if request.method == 'POST':
@@ -427,8 +433,7 @@ def doctor_delete(request, doctor_id):
     # Redirect to doctor list if not POST
     return redirect('doctor_list')
 
-@login_required
-@user_passes_test(check_is_admin)
+@admin_required
 def doctor_toggle_active(request, doctor_id):
     """Toggle doctor active status"""
     doctor = get_object_or_404(Doctor, id=doctor_id)
@@ -443,8 +448,7 @@ def doctor_toggle_active(request, doctor_id):
 
 
 # Appointment Management Views
-@login_required
-@user_passes_test(check_is_admin)
+@admin_required
 def appointment_management(request):
     """Admin appointment management - view all appointments"""
     search_query = request.GET.get('search', '')
@@ -483,8 +487,7 @@ def appointment_management(request):
     return render(request, 'admin/appointments/appointment_list.html', context)
 
 
-@login_required
-@user_passes_test(check_is_admin)
+@admin_required
 def appointment_detail_admin(request, appointment_id):
     """Admin view appointment details"""
     appointment = get_object_or_404(Appointment, id=appointment_id)
@@ -495,8 +498,7 @@ def appointment_detail_admin(request, appointment_id):
     return render(request, 'admin/appointments/appointment_detail.html', context)
 
 
-@login_required
-@user_passes_test(check_is_admin)
+@admin_required
 def appointment_edit_admin(request, appointment_id):
     """Admin edit appointment details."""
     appointment = get_object_or_404(Appointment, id=appointment_id)
@@ -528,8 +530,7 @@ def appointment_edit_admin(request, appointment_id):
     })
 
 
-@login_required
-@user_passes_test(check_is_admin)
+@admin_required
 def cancel_appointment_admin(request, appointment_id):
     """Admin cancel appointment"""
     appointment = get_object_or_404(Appointment, id=appointment_id)
@@ -546,8 +547,7 @@ def cancel_appointment_admin(request, appointment_id):
     return render(request, 'admin/appointments/appointment_cancel.html', context)
 
 
-@login_required
-@user_passes_test(check_is_admin)
+@admin_required
 def doctor_appointments(request, doctor_id):
     """View appointments for a specific doctor"""
     doctor = get_object_or_404(Doctor, id=doctor_id)
@@ -561,8 +561,7 @@ def doctor_appointments(request, doctor_id):
 
 
 # User Management Views
-@login_required
-@user_passes_test(check_is_admin)
+@admin_required
 def user_management(request):
     """Admin user management - view all users"""
     search_query = request.GET.get('search', '')
@@ -605,8 +604,7 @@ def user_management(request):
     return render(request, 'admin/users/user_list.html', context)
 
 
-@login_required
-@user_passes_test(check_is_admin)
+@admin_required
 def user_detail_admin(request, user_id):
     """Admin view user details and appointments"""
     user = get_object_or_404(User, id=user_id)
@@ -629,8 +627,7 @@ def user_detail_admin(request, user_id):
     return render(request, 'admin/users/user_detail.html', context)
 
 
-@login_required
-@user_passes_test(check_is_admin)
+@admin_required
 def user_edit_admin(request, user_id):
     """Admin edit patient account details."""
     user = get_object_or_404(User, id=user_id, is_staff=False)
@@ -650,8 +647,7 @@ def user_edit_admin(request, user_id):
     })
 
 
-@login_required
-@user_passes_test(check_is_admin)
+@admin_required
 def user_toggle_active_admin(request, user_id):
     """Enable/disable patient account."""
     if request.method == 'POST':
@@ -663,8 +659,7 @@ def user_toggle_active_admin(request, user_id):
     return redirect('user_management')
 
 
-@login_required
-@user_passes_test(check_is_admin)
+@admin_required
 def user_delete_admin(request, user_id):
     """Delete a patient account."""
     if request.method == 'POST':
@@ -675,8 +670,7 @@ def user_delete_admin(request, user_id):
     return redirect('user_management')
 
 
-@login_required
-@user_passes_test(check_is_admin)
+@admin_required
 def slot_management(request):
     """View and manage doctor slot configuration."""
     search_query = request.GET.get('search', '')
@@ -695,8 +689,7 @@ def slot_management(request):
     })
 
 
-@login_required
-@user_passes_test(check_is_admin)
+@admin_required
 def slot_edit(request, doctor_id):
     """Edit a doctor's available days and time slots."""
     doctor = get_object_or_404(Doctor, id=doctor_id)
@@ -736,8 +729,7 @@ def slot_edit(request, doctor_id):
 # -----------------------------
 # ADD DOCTOR (COMPREHENSIVE FORM)
 # -----------------------------
-@login_required
-@user_passes_test(lambda u: u.is_staff)
+@admin_required
 def add_doctor(request):
     """Add Doctor with comprehensive form including account details and schedule"""
     if request.method == 'POST':
