@@ -195,31 +195,6 @@ class AddDoctorForm(forms.ModelForm):
         return doctor
 
 
-class SlotGenerationForm(forms.Form):
-    """Form for generating appointment slots"""
-    doctor = forms.ModelChoiceField(
-        queryset=Doctor.objects.filter(is_active=True),
-        widget=forms.Select(attrs={'class': 'form-control'}),
-        empty_label="Select Doctor"
-    )
-    start_date = forms.DateField(
-        widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-        help_text="Start date for slot generation"
-    )
-    end_date = forms.DateField(
-        widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-        help_text="End date for slot generation"
-    )
-    
-    def clean(self):
-        cleaned_data = super().clean()
-        start_date = cleaned_data.get('start_date')
-        end_date = cleaned_data.get('end_date')
-        
-        if start_date and end_date and start_date > end_date:
-            raise forms.ValidationError("Start date must be before end date")
-        
-        return cleaned_data
 
 
 
