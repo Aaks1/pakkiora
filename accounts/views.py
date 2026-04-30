@@ -469,22 +469,9 @@ def doctor_schedule_create(request, doctor_id):
             schedule.doctor = doctor
             schedule.save()
             
-            # Generate slots for the next 30 days for this schedule
-            from appointments.schedule_generator import ScheduleGeneratorService
-            from datetime import date, timedelta
-            
-            schedule_service = ScheduleGeneratorService()
-            start_date = date.today()
-            end_date = start_date + timedelta(days=30)
-            
-            try:
-                stats = schedule_service.regenerate_slots_for_date_range(doctor, start_date, end_date)
-                safe_message(request, 'success', 
-                    f'Schedule created for Dr. {doctor.first_name} {doctor.last_name}! '
-                    f'Generated {stats["slots_generated"]} slots for the next 30 days.')
-            except Exception as e:
-                safe_message(request, 'warning', 
-                    f'Schedule created but slot generation failed: {str(e)}')
+            safe_message(request, 'success', 
+                f'Schedule created for Dr. {doctor.first_name} {doctor.last_name}! '
+                f'Slots will be generated dynamically based on this schedule.')
             
             return redirect('doctor_schedule_list', doctor_id=doctor_id)
     else:
@@ -509,22 +496,9 @@ def doctor_schedule_edit(request, doctor_id, schedule_id):
         if form.is_valid():
             form.save()
             
-            # Regenerate slots for the next 30 days when schedule is updated
-            from appointments.schedule_generator import ScheduleGeneratorService
-            from datetime import date, timedelta
-            
-            schedule_service = ScheduleGeneratorService()
-            start_date = date.today()
-            end_date = start_date + timedelta(days=30)
-            
-            try:
-                stats = schedule_service.regenerate_slots_for_date_range(doctor, start_date, end_date)
-                safe_message(request, 'success', 
-                    f'Schedule updated for Dr. {doctor.first_name} {doctor.last_name}! '
-                    f'Regenerated {stats["slots_generated"]} slots for the next 30 days.')
-            except Exception as e:
-                safe_message(request, 'warning', 
-                    f'Schedule updated but slot regeneration failed: {str(e)}')
+            safe_message(request, 'success', 
+                f'Schedule updated for Dr. {doctor.first_name} {doctor.last_name}! '
+                f'Slots will be generated dynamically based on this schedule.')
             
             return redirect('doctor_schedule_list', doctor_id=doctor_id)
     else:
@@ -728,13 +702,11 @@ def user_detail_admin(request, user_id):
 @login_required
 @user_passes_test(check_is_admin)
 def slot_generation_admin(request):
-    """Admin manual slot generation interface"""
+    """Admin schedule management interface - NEW ARCHITECTURE"""
     from django.utils import timezone
-    from appointments.schedule_generator import ScheduleGeneratorService
     from datetime import date, timedelta, time
     
     today = timezone.now().date()
-    schedule_service = ScheduleGeneratorService()
     
     # Get all active doctors
     doctors = Doctor.objects.filter(is_active=True)
@@ -750,112 +722,21 @@ def slot_generation_admin(request):
         if doctor_id:
             doctor = Doctor.objects.get(id=doctor_id, is_active=True)
             
-            if action == 'generate_range':
-                # Generate slots for date range
-                start_date = request.POST.get('start_date')
-                end_date = request.POST.get('end_date')
-                
-                if start_date and end_date:
-                    try:
-                        start_date_obj = datetime.strptime(start_date, '%Y-%m-%d').date()
-                        end_date_obj = datetime.strptime(end_date, '%Y-%m-%d').date()
-                        
-                        # Generate slots for date range
-                        stats = schedule_service.regenerate_slots_for_date_range(
-                            doctor, start_date_obj, end_date_obj
-                        )
-                        
-                        generated_slots.append({
-                            'doctor': doctor,
-                            'stats': stats,
-                            'start_date': start_date_obj,
-                            'end_date': end_date_obj
-                        })
-                        
-                        safe_message(request, 'success', f'Successfully generated {stats["slots_generated"]} slots for Dr. {doctor.first_name} {doctor.last_name}')
-                        
-                    except Exception as e:
-                        errors.append(str(e))
-                        safe_message(request, 'error', f'Error generating slots: {str(e)}')
-                else:
-                    safe_message(request, 'error', 'Please select start and end dates')
-                    
-            elif action == 'add_manual_slot':
-                # Add individual manual slot
-                slot_date = request.POST.get('slot_date')
-                start_time = request.POST.get('start_time')
-                end_time = request.POST.get('end_time')
-                
-                if slot_date and start_time and end_time:
-                    try:
-                        slot_date_obj = datetime.strptime(slot_date, '%Y-%m-%d').date()
-                        start_time_obj = datetime.strptime(start_time, '%H:%M').time()
-                        end_time_obj = datetime.strptime(end_time, '%H:%M').time()
-                        
-                        # Create manual slot
-                        from doctors.models import DoctorTimeSlot
-                        from django.utils import timezone as tz
-                        
-                        # Convert local time to UTC
-                        start_datetime = datetime.combine(slot_date_obj, start_time_obj)
-                        end_datetime = datetime.combine(slot_date_obj, end_time_obj)
-                        
-                        start_utc = tz.make_aware(start_datetime, tz.get_current_timezone()).astimezone(tz.UTC)
-                        end_utc = tz.make_aware(end_datetime, tz.get_current_timezone()).astimezone(tz.UTC)
-                        
-                        slot, created = DoctorTimeSlot.objects.get_or_create(
-                            doctor=doctor,
-                            date=slot_date_obj,
-                            start_datetime=start_utc,
-                            defaults={
-                                'end_datetime': end_utc,
-                                'status': 'available'
-                            }
-                        )
-                        
-                        if created:
-                            manual_slots.append({
-                                'doctor': doctor,
-                                'date': slot_date_obj,
-                                'start_time': start_time_obj,
-                                'end_time': end_time_obj,
-                                'status': 'available'
-                            })
-                            safe_message(request, 'success', f'Successfully created slot for {slot_date_obj} {start_time} - {end_time}')
-                        else:
-                            safe_message(request, 'warning', 'Slot already exists for this time')
-                            
-                    except Exception as e:
-                        errors.append(str(e))
-                        safe_message(request, 'error', f'Error creating manual slot: {str(e)}')
-                else:
-                    safe_message(request, 'error', 'Please select date, start time, and end time')
-        else:
-            safe_message(request, 'error', 'Please select a doctor')
+            if action == 'view_schedule':
+                # View doctor's current schedules
+                schedules = DoctorSchedule.objects.filter(doctor=doctor, is_active=True).order_by('day_of_week')
+                safe_message(request, 'info', f'Found {schedules.count()} active schedules for Dr. {doctor.first_name} {doctor.last_name}')
+            else:
+                safe_message(request, 'warning', 'Slot generation is now dynamic. Create schedules instead.')
     
-    # Get existing slots for selected doctor
-    selected_doctor_id = request.POST.get('doctor_id') if request.method == 'POST' else None
-    existing_slots = []
-    
-    if selected_doctor_id:
-        try:
-            selected_doctor = Doctor.objects.get(id=selected_doctor_id, is_active=True)
-            existing_slots = DoctorTimeSlot.objects.filter(
-                doctor=selected_doctor,
-                date__gte=today,
-                date__lte=today + timedelta(days=7)
-            ).order_by('date', 'start_datetime')
-        except Doctor.DoesNotExist:
-            pass
+    # Get all active schedules for display
+    all_schedules = DoctorSchedule.objects.filter(is_active=True).select_related('doctor').order_by('doctor__first_name', 'day_of_week')
     
     context = {
         'doctors': doctors,
-        'generated_slots': generated_slots,
+        'all_schedules': all_schedules,
         'errors': errors,
-        'manual_slots': manual_slots,
-        'existing_slots': existing_slots,
         'today': today,
-        'selected_doctor_id': selected_doctor_id,
     }
     
     return render(request, 'admin/slots/generate_slots.html', context)
