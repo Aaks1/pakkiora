@@ -8,10 +8,10 @@ from django.db.models import Q
 from django.utils import timezone
 from datetime import datetime, date, timedelta
 from .models import UserProfile, AdminProfile
-from doctors.models import Doctor, Patient
+from doctors.models import Doctor, Patient, DoctorAvailability
 from appointments.models import Appointment
 from .forms import UserRegistrationForm, AdminUserForm
-from doctors.forms import DoctorForm
+from doctors.forms import DoctorForm, DoctorAvailabilityForm, MultiDateAvailabilityForm
 
 def safe_message(request, level, message):
     """Safe message handling for serverless environments"""
@@ -597,6 +597,92 @@ def user_detail_admin(request, user_id):
         'appointments': appointments,
     }
     return render(request, 'admin/users/user_detail.html', context)
+
+
+@login_required
+@user_passes_test(check_is_admin)
+def doctor_calendar(request, doctor_id):
+    """Doctor calendar management interface"""
+    doctor = get_object_or_404(Doctor, id=doctor_id)
+    
+    # Get current month and year from query params
+    today = timezone.now().date()
+    month = int(request.GET.get('month', today.month))
+    year = int(request.GET.get('year', today.year))
+    
+    # Calculate calendar data
+    first_day = date(year, month, 1)
+    last_day = date(year, month + 1, 1) - timedelta(days=1) if month < 12 else date(year, 12, 31)
+    
+    # Get availability for this month
+    availabilities = DoctorAvailability.objects.filter(
+        doctor=doctor,
+        date__gte=first_day,
+        date__lte=last_day
+    ).order_by('date')
+    
+    # Create availability dictionary for quick lookup
+    availability_dict = {avail.date: avail for avail in availabilities}
+    
+    # Handle form submissions
+    if request.method == 'POST':
+        if 'single_date' in request.POST:
+            form = DoctorAvailabilityForm(request.POST)
+            if form.is_valid():
+                availability = form.save(commit=False)
+                availability.doctor = doctor
+                availability.save()
+                safe_message(request, 'success', f'Availability set for {availability.date}')
+                return redirect('admin:doctor_calendar', doctor_id=doctor_id)
+        else:
+            form = MultiDateAvailabilityForm(request.POST)
+            if form.is_valid():
+                availabilities_created = form.save_availability()
+                safe_message(request, 'success', f'Set availability for {len(availabilities_created)} dates')
+                return redirect('admin:doctor_calendar', doctor_id=doctor_id)
+    else:
+        form = DoctorAvailabilityForm(initial={'doctor': doctor})
+        multi_form = MultiDateAvailabilityForm()
+    
+    # Generate calendar weeks
+    calendar_weeks = []
+    current_date = first_day - timedelta(days=first_day.weekday())
+    
+    while current_date <= last_day or current_date.weekday() < 6:
+        week = []
+        for day in range(7):
+            if current_date.month == month:
+                availability = availability_dict.get(current_date, None)
+                week.append({
+                    'date': current_date,
+                    'is_current_month': True,
+                    'availability': availability,
+                    'is_today': current_date == today,
+                    'is_past': current_date < today
+                })
+            else:
+                week.append({
+                    'date': current_date,
+                    'is_current_month': False,
+                    'availability': None,
+                    'is_today': False,
+                    'is_past': current_date < today
+                })
+            current_date += timedelta(days=1)
+        calendar_weeks.append(week)
+    
+    context = {
+        'doctor': doctor,
+        'calendar_weeks': calendar_weeks,
+        'current_month': date(year, month, 1),
+        'today': today,
+        'form': form,
+        'multi_form': multi_form,
+        'month': month,
+        'year': year,
+    }
+    
+    return render(request, 'admin/doctor_calendar.html', context)
 
 
 

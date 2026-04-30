@@ -1,0 +1,470 @@
+{% extends 'admin/base.html' %}
+
+{% block title %}Doctor Calendar - {{ doctor.first_name }} {{ doctor.last_name }}{% endblock %}
+
+{% block page_title %}Doctor Calendar{% endblock %}
+
+{% block page_subtitle %}{{ doctor.first_name }} {{ doctor.last_name }} - {{ doctor.specialization }}{% endblock %}
+
+{% block content %}
+<style>
+    .calendar-container {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+    
+    .calendar-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 1.5rem;
+    }
+    
+    .calendar-nav {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+    
+    .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 1px;
+        background: #e5e7eb;
+        border: 1px solid #e5e7eb;
+    }
+    
+    .calendar-day-header {
+        background: #f9fafb;
+        padding: 0.75rem;
+        text-align: center;
+        font-weight: 600;
+        color: #374151;
+        font-size: 0.875rem;
+    }
+    
+    .calendar-day {
+        background: white;
+        min-height: 80px;
+        padding: 0.5rem;
+        position: relative;
+        transition: all 0.2s ease;
+    }
+    
+    .calendar-day:hover {
+        background: #f9fafb;
+    }
+    
+    .calendar-day.other-month {
+        background: #f9fafb;
+        color: #9ca3af;
+    }
+    
+    .calendar-day.today {
+        background: #fef3c7;
+        border: 2px solid #f59e0b;
+    }
+    
+    .calendar-day.past {
+        opacity: 0.5;
+        pointer-events: none;
+    }
+    
+    .calendar-day.available {
+        background: #d1fae5;
+        border: 1px solid #10b981;
+    }
+    
+    .calendar-day.unavailable {
+        background: #fee2e2;
+        border: 1px solid #ef4444;
+    }
+    
+    .day-number {
+        font-weight: 600;
+        font-size: 0.875rem;
+        margin-bottom: 0.25rem;
+    }
+    
+    .availability-status {
+        font-size: 0.75rem;
+        padding: 0.125rem 0.25rem;
+        border-radius: 0.25rem;
+        margin-top: 0.25rem;
+    }
+    
+    .status-available {
+        background: #10b981;
+        color: white;
+    }
+    
+    .status-unavailable {
+        background: #ef4444;
+        color: white;
+    }
+    
+    .form-section {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .form-tabs {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1.5rem;
+        border-bottom: 1px solid #e5e7eb;
+    }
+    
+    .form-tab {
+        padding: 0.75rem 1rem;
+        background: none;
+        border: none;
+        color: #6b7280;
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+        transition: all 0.2s ease;
+    }
+    
+    .form-tab.active {
+        color: #4f46e5;
+        border-bottom-color: #4f46e5;
+    }
+    
+    .form-content {
+        display: none;
+    }
+    
+    .form-content.active {
+        display: block;
+    }
+    
+    .btn-primary {
+        background: #4f46e5;
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.5rem;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .btn-primary:hover {
+        background: #4338ca;
+    }
+    
+    .btn-secondary {
+        background: #6b7280;
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.5rem;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .btn-secondary:hover {
+        background: #4b5563;
+    }
+    
+    .legend {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+    }
+    
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+    }
+    
+    .legend-color {
+        width: 1rem;
+        height: 1rem;
+        border-radius: 0.25rem;
+    }
+</style>
+
+<div class="container-fluid">
+    <!-- Back Navigation -->
+    <div class="mb-4">
+        <a href="{% url 'doctor_list' %}" class="text-blue-600 hover:text-blue-800 transition-colors">
+            <i class="fas fa-arrow-left mr-2"></i>
+            Back to Doctors
+        </a>
+    </div>
+
+    <!-- Calendar Header -->
+    <div class="calendar-container mb-6">
+        <div class="calendar-header">
+            <div class="calendar-nav">
+                <div>
+                    <h2 class="text-2xl font-bold mb-2">{{ doctor.first_name }} {{ doctor.last_name }}</h2>
+                    <p class="text-blue-100">{{ doctor.specialization }}</p>
+                </div>
+                <div class="text-right">
+                    <div class="flex gap-2">
+                        <a href="?month={{ month|add:'-1' }}&year={{ year }}" 
+                           class="px-3 py-1 bg-white bg-opacity-20 text-white rounded hover:bg-opacity-30 transition-colors">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                        <span class="px-3 py-1 bg-white bg-opacity-20 text-white rounded">
+                            {{ current_month|date:"F Y" }}
+                        </span>
+                        <a href="?month={{ month|add:'1' }}&year={{ year }}" 
+                           class="px-3 py-1 bg-white bg-opacity-20 text-white rounded hover:bg-opacity-30 transition-colors">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Legend -->
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #d1fae5; border: 1px solid #10b981;"></div>
+                    <span>Available</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #fee2e2; border: 1px solid #ef4444;"></div>
+                    <span>Unavailable</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #fef3c7; border: 2px solid #f59e0b;"></div>
+                    <span>Today</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: white; border: 1px solid #e5e7eb;"></div>
+                    <span>No Status</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Calendar Grid -->
+        <div class="calendar-grid">
+            <!-- Day Headers -->
+            <div class="calendar-day-header">Sun</div>
+            <div class="calendar-day-header">Mon</div>
+            <div class="calendar-day-header">Tue</div>
+            <div class="calendar-day-header">Wed</div>
+            <div class="calendar-day-header">Thu</div>
+            <div class="calendar-day-header">Fri</div>
+            <div class="calendar-day-header">Sat</div>
+            
+            <!-- Calendar Days -->
+            {% for week in calendar_weeks %}
+                {% for day in week %}
+                    <div class="calendar-day 
+                        {% if not day.is_current_month %}other-month{% endif %}
+                        {% if day.is_today %}today{% endif %}
+                        {% if day.is_past %}past{% endif %}
+                        {% if day.availability %}
+                            {% if day.availability.is_available %}available{% else %}unavailable{% endif %}
+                        {% endif %}">
+                        <div class="day-number">{{ day.date.day }}</div>
+                        {% if day.availability %}
+                            <div class="availability-status 
+                                {% if day.availability.is_available %}status-available{% else %}status-unavailable{% endif %}">
+                                {% if day.availability.is_available %}Available{% else %}Unavailable{% endif %}
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Availability Management Forms -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="form-section">
+                <h3 class="text-lg font-semibold mb-4">Manage Availability</h3>
+                
+                <!-- Form Tabs -->
+                <div class="form-tabs">
+                    <button type="button" class="form-tab active" onclick="switchTab('single')">
+                        <i class="fas fa-calendar-day mr-2"></i>Single Date
+                    </button>
+                    <button type="button" class="form-tab" onclick="switchTab('range')">
+                        <i class="fas fa-calendar-week mr-2"></i>Date Range
+                    </button>
+                </div>
+                
+                <!-- Single Date Form -->
+                <div id="single-form" class="form-content active">
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="single_date" value="1">
+                        
+                        <div class="mb-4">
+                            <label for="{{ form.date.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                                {{ form.date.label }}
+                            </label>
+                            {{ form.date }}
+                            {% if form.date.errors %}
+                                <div class="text-red-500 text-sm mt-1">
+                                    {% for error in form.date.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-4">
+                            <div class="flex items-center">
+                                {{ form.is_available }}
+                                <label for="{{ form.is_available.id_for_label }}" class="ml-2 text-sm font-medium text-gray-700">
+                                    {{ form.is_available.label }}
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="{{ form.notes.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                                {{ form.notes.label }}
+                            </label>
+                            {{ form.notes }}
+                            {% if form.notes.help_text %}
+                                <p class="text-gray-500 text-sm mt-1">{{ form.notes.help_text }}</p>
+                            {% endif %}
+                        </div>
+                        
+                        <button type="submit" class="btn-primary">
+                            <i class="fas fa-save mr-2"></i>Set Availability
+                        </button>
+                    </form>
+                </div>
+                
+                <!-- Date Range Form -->
+                <div id="range-form" class="form-content">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-4">
+                            <label for="{{ multi_form.doctor.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                                {{ multi_form.doctor.label }}
+                            </label>
+                            {{ multi_form.doctor }}
+                            {% if multi_form.doctor.errors %}
+                                <div class="text-red-500 text-sm mt-1">
+                                    {% for error in multi_form.doctor.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label for="{{ multi_form.start_date.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                                    {{ multi_form.start_date.label }}
+                                </label>
+                                {{ multi_form.start_date }}
+                                {% if multi_form.start_date.errors %}
+                                    <div class="text-red-500 text-sm mt-1">
+                                        {% for error in multi_form.start_date.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div>
+                                <label for="{{ multi_form.end_date.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                                    {{ multi_form.end_date.label }}
+                                </label>
+                                {{ multi_form.end_date }}
+                                {% if multi_form.end_date.errors %}
+                                    <div class="text-red-500 text-sm mt-1">
+                                        {% for error in multi_form.end_date.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn-primary">
+                            <i class="fas fa-calendar-plus mr-2"></i>Set Availability Range
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="form-section">
+                <h3 class="text-lg font-semibold mb-4">Current Month Summary</h3>
+                
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center p-3 bg-green-50 rounded-lg">
+                        <span class="text-green-800 font-medium">Available Days</span>
+                        <span class="text-green-600 font-bold">
+                            {{ calendar_weeks|join:','|cut:','|selectattr:'availability'|selectattr:'availability.is_available'|list|length }}
+                        </span>
+                    </div>
+                    
+                    <div class="flex justify-between items-center p-3 bg-red-50 rounded-lg">
+                        <span class="text-red-800 font-medium">Unavailable Days</span>
+                        <span class="text-red-600 font-bold">
+                            {{ calendar_weeks|join:','|cut:','|selectattr:'availability'|selectattr:'availability.is_available'|list|length }}
+                        </span>
+                    </div>
+                    
+                    <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                        <span class="text-gray-800 font-medium">Unset Days</span>
+                        <span class="text-gray-600 font-bold">
+                            {{ calendar_weeks|join:','|cut:','|rejectattr:'availability'|list|length }}
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="mt-6 p-4 bg-blue-50 rounded-lg">
+                    <h4 class="font-medium text-blue-800 mb-2">Quick Tips</h4>
+                    <ul class="text-sm text-blue-700 space-y-1">
+                        <li>• Click on dates in the calendar to see availability status</li>
+                        <li>• Use "Single Date" to set availability for specific days</li>
+                        <li>• Use "Date Range" to set availability for multiple days</li>
+                        <li>• Navigate between months using the arrow buttons</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function switchTab(tabName) {
+    // Hide all form contents
+    document.querySelectorAll('.form-content').forEach(content => {
+        content.classList.remove('active');
+    });
+    
+    // Remove active class from all tabs
+    document.querySelectorAll('.form-tab').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    
+    // Show selected form content
+    document.getElementById(tabName + '-form').classList.add('active');
+    
+    // Add active class to clicked tab
+    event.target.classList.add('active');
+}
+
+// Auto-select current doctor in range form
+document.addEventListener('DOMContentLoaded', function() {
+    const doctorSelect = document.querySelector('#id_doctor');
+    if (doctorSelect) {
+        doctorSelect.value = '{{ doctor.id }}';
+    }
+});
+</script>
+{% endblock %}

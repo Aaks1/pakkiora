@@ -24,6 +24,7 @@ urlpatterns = [
     path('admin-dashboard/doctors/<int:doctor_id>/edit/', accounts.views.doctor_edit, name='doctor_edit'),
     path('admin-dashboard/doctors/<int:doctor_id>/delete/', accounts.views.doctor_delete, name='doctor_delete'),
     path('admin-dashboard/doctors/<int:doctor_id>/toggle/', accounts.views.doctor_toggle_active, name='doctor_toggle_active'),
+    path('admin-dashboard/doctors/<int:doctor_id>/calendar/', accounts.views.doctor_calendar, name='doctor_calendar'),
     
         
     # Appointment Management

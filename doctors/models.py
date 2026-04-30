@@ -63,6 +63,24 @@ class Doctor(models.Model):
 
 
 
+class DoctorAvailability(models.Model):
+    """Doctor availability for calendar-based scheduling"""
+    doctor = models.ForeignKey(Doctor, on_delete=models.CASCADE, related_name='availabilities')
+    date = models.DateField()
+    is_available = models.BooleanField(default=True)
+    notes = models.TextField(blank=True, help_text="Optional notes for this date")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        unique_together = ['doctor', 'date']
+        ordering = ['date']
+    
+    def __str__(self):
+        status = "Available" if self.is_available else "Unavailable"
+        return f"{self.doctor.first_name} {self.doctor.last_name} - {self.date} ({status})"
+
+
 class Patient(models.Model):
     """Patient profile for healthcare system"""
     GENDER_CHOICES = [
