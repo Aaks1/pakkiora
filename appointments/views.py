@@ -148,57 +148,83 @@ def doctor_list(request):
 # -----------------------------
 @login_required
 def doctor_detail(request, doctor_id):
-    """Doctor detail page with booking functionality"""
+    """Doctor detail + recurring date/slot booking page."""
     doctor = get_object_or_404(Doctor, id=doctor_id, is_active=True)
-    
-    # Get patient
-    patient, _ = Patient.objects.get_or_create(
+
+    # Ensure patient profile exists for booking relation
+    Patient.objects.get_or_create(
         user=request.user,
         defaults={
             "first_name": request.user.first_name or "Unknown",
             "last_name": request.user.last_name or "User",
-        }
+        },
     )
-    
-    # Get current and next week dates
+
     today = timezone.now().date()
-    current_week_start = today - timedelta(days=today.weekday())
-    current_week_end = current_week_start + timedelta(days=6)
-    next_week_start = current_week_start + timedelta(days=7)
-    next_week_end = next_week_start + timedelta(days=6)
-    
-    # Get available dates for this doctor
-    all_dates = []
-    for i in range(14):  # Current week + next week
-        date = current_week_start + timedelta(days=i)
-        if date >= today:
-            all_dates.append(date)
-    
-    # Build availability from doctor configured days + overrides
-    availabilities = []
-    for date in all_dates:
-        if is_doctor_available_on_date(doctor, date):
-            availabilities.append(type('obj', (), {'date': date}))
-    
-    # Get doctor's appointments for availability checking
-    doctor_appointments = Appointment.objects.filter(
-        doctor=doctor,
-        date__in=[availability.date for availability in availabilities],
-        status='BOOKED'
-    ).select_related('patient')
-    
+    selected_date_str = request.GET.get('date') or request.POST.get('date')
+    selected_date = today
+    if selected_date_str:
+        try:
+            selected_date = datetime.strptime(selected_date_str, '%Y-%m-%d').date()
+        except ValueError:
+            selected_date = today
+    selected_date_str = selected_date.strftime('%Y-%m-%d')
+
+    if request.method == 'POST':
+        selected_time = request.POST.get('time')
+        symptoms = request.POST.get('symptoms', '').strip()
+
+        if selected_date < today:
+            messages.error(request, 'You cannot book an appointment in the past.')
+        elif not is_doctor_available_on_date(doctor, selected_date):
+            messages.error(request, 'Doctor is not available on selected date.')
+        elif not selected_time:
+            messages.error(request, 'Please select a time slot.')
+        else:
+            appointment_time = datetime.strptime(selected_time, '%H:%M').time()
+            with transaction.atomic():
+                conflict = Appointment.objects.select_for_update().filter(
+                    doctor=doctor,
+                    date=selected_date,
+                    start_time=appointment_time,
+                    status='BOOKED'
+                ).exists()
+
+                if conflict:
+                    messages.error(request, 'This slot is already booked. Please choose another slot.')
+                else:
+                    Appointment.objects.create(
+                        doctor=doctor,
+                        patient=request.user,
+                        date=selected_date,
+                        start_time=appointment_time,
+                        end_time=(datetime.combine(selected_date, appointment_time) + timedelta(minutes=30)).time(),
+                        symptoms=symptoms,
+                        status='BOOKED',
+                    )
+                    messages.success(request, 'Appointment booked successfully.')
+                    return redirect('patient:past_appointments')
+
+    is_available = selected_date >= today and is_doctor_available_on_date(doctor, selected_date)
+    available_slots = []
+    if is_available:
+        available_slots = parse_doctor_time_slots(doctor, selected_date) or generate_default_time_slots(selected_date)
+        booked_times = Appointment.objects.filter(
+            doctor=doctor,
+            date=selected_date,
+            status='BOOKED'
+        ).values_list('start_time', flat=True)
+        available_slots = [slot for slot in available_slots if slot['start_time'] not in booked_times]
+
     context = {
         'doctor': doctor,
-        'patient': patient,
-        'availabilities': availabilities,
-        'doctor_appointments': doctor_appointments,
         'today': today,
-        'current_week_start': current_week_start,
-        'current_week_end': current_week_end,
-        'next_week_start': next_week_start,
-        'next_week_end': next_week_end,
+        'selected_date': selected_date,
+        'selected_date_str': selected_date_str,
+        'is_available': is_available,
+        'available_slots': available_slots,
     }
-    
+
     return render(request, 'patient/doctors/detail.html', context)
 
 

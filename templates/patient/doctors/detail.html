@@ -1,119 +1,63 @@
 {% extends 'patient/base.html' %}
 
-{% block title %}Dr. {{ doctor.first_name }} {{ doctor.last_name }} - Piki Ora{% endblock %}
+{% block title %}Book with Dr. {{ doctor.first_name }} {{ doctor.last_name }}{% endblock %}
 
 {% block content %}
-    <!-- Page Header -->
-    <div class="mb-8">
-        <div class="flex items-center space-x-3">
-            <a href="{% url 'patient:doctors' %}" class="text-gray-500 hover:text-gray-700">
-                <i class="fas fa-arrow-left"></i>
-            </a>
-            <h1 class="text-3xl font-bold text-gray-900">Dr. {{ doctor.first_name }} {{ doctor.last_name }}</h1>
-        </div>
-        <p class="text-gray-600 mt-2">{{ doctor.specialization }} • {{ doctor.qualification }}</p>
+<div class="max-w-4xl mx-auto">
+    <div class="mb-6">
+        <a href="{% url 'patient:doctors' %}" class="text-blue-600 hover:text-blue-800">
+            <i class="fas fa-arrow-left mr-2"></i>Back to Doctors
+        </a>
     </div>
-    <!-- Clean Doctor Profile Section -->
-    <div class="bg-white rounded-lg shadow-md overflow-hidden mb-8">
-        <div class="md:flex">
-            <!-- Doctor Image -->
-            <div class="md:w-1/3">
-                {% if doctor.profile_picture %}
-                    <img src="{{ doctor.profile_picture.url }}" alt="{{ doctor.first_name }} {{ doctor.last_name }}" 
-                         class="w-full h-96 object-cover">
-                {% else %}
-                    <div class="w-full h-96 bg-gray-100 flex items-center justify-center">
-                        <i class="fas fa-user-md text-gray-300 text-6xl"></i>
-                    </div>
-                {% endif %}
-            </div>
-            
-            <!-- Doctor Info -->
-            <div class="md:w-2/3 p-6">
-                <div class="mb-4">
-                    <h1 class="text-3xl font-bold text-gray-900 mb-1">Dr. {{ doctor.first_name }} {{ doctor.last_name }}</h1>
-                    <p class="text-lg text-gray-600 mb-3">{{ doctor.specialization }}</p>
-                    <div class="flex items-center gap-4 text-sm">
-                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {% if doctor.is_active %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
-                            {% if doctor.is_active %}Available{% else %}Unavailable{% endif %}
-                        </span>
-                        <span class="text-gray-600">{{ doctor.experience_years|default:0 }} years experience</span>
-                    </div>
-                </div>
-                
-                <!-- Bio -->
-                <div class="mb-6">
-                    <h2 class="text-lg font-semibold text-gray-900 mb-2">About</h2>
-                    <p class="text-gray-600 leading-relaxed">
-                        {{ doctor.bio|default:"Experienced medical professional dedicated to providing quality healthcare services with a patient-centered approach." }}
-                    </p>
-                </div>
-                
-                <!-- Details Grid -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="flex items-center text-gray-600">
-                        <i class="fas fa-hospital-alt mr-3 text-gray-400 w-5"></i>
-                        <span>{{ doctor.department|default:"Medical Center" }}</span>
-                    </div>
-                    <div class="flex items-center text-gray-600">
-                        <i class="fas fa-graduation-cap mr-3 text-gray-400 w-5"></i>
-                        <span>{{ doctor.qualification|default:"Medical Degree" }}</span>
-                    </div>
-                    <div class="flex items-center text-gray-600">
-                        <i class="fas fa-phone mr-3 text-gray-400 w-5"></i>
-                        <span>{{ doctor.phone|default:"Not available" }}</span>
-                    </div>
-                    <div class="flex items-center text-gray-600">
-                        <i class="fas fa-envelope mr-3 text-gray-400 w-5"></i>
-                        <span>{{ doctor.email|default:"Not available" }}</span>
-                    </div>
-                </div>
-            </div>
+
+    <div class="bg-white rounded-xl shadow-md border border-gray-200 p-6 mb-6">
+        <h1 class="text-2xl font-bold text-gray-900">Dr. {{ doctor.first_name }} {{ doctor.last_name }}</h1>
+        <p class="text-gray-600 mt-1">{{ doctor.specialization }} • {{ doctor.qualification }}</p>
+        <div class="mt-3 text-sm text-gray-600">
+            <p><strong>Available Days:</strong> {{ doctor.available_days|join:", "|title|default:"As configured by clinic" }}</p>
+            <p><strong>Default Slots:</strong> {{ doctor.time_slots|default:"09:00-17:00 every 30 min" }}</p>
         </div>
     </div>
 
-    <!-- Booking Section -->
-    <div class="bg-white rounded-lg shadow-md overflow-hidden">
-        <!-- Header -->
-        <div class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6">
-            <h2 class="text-2xl font-bold">Book Appointment</h2>
-            <p class="text-blue-100 mt-1">Schedule your consultation with Dr. {{ doctor.first_name }}</p>
-        </div>
+    <div class="bg-white rounded-xl shadow-md border border-gray-200 p-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">Choose Date and Slot</h2>
+        <p class="text-sm text-gray-600 mb-4">
+            Slots repeat every week on configured available days until edited by admin.
+        </p>
 
-        <div class="p-6">
-            {% if availabilities %}
-            <div class="mb-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">Available Dates</h3>
-                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
-                    {% for availability in availabilities %}
-                    <div class="text-center p-3 bg-green-50 border border-green-200 rounded-lg">
-                        <div class="text-sm text-green-600 font-medium">
-                            {{ availability.date|date:"D" }}
-                        </div>
-                        <div class="text-lg font-bold text-green-800">
-                            {{ availability.date|date:"d" }}
-                        </div>
-                        <div class="text-xs text-green-600">
-                            {{ availability.date|date:"M" }}
-                        </div>
-                    </div>
+        <form method="get" class="mb-5 flex gap-3 items-end">
+            <div class="flex-1">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Appointment Date</label>
+                <input type="date" name="date" value="{{ selected_date_str }}" min="{{ today|date:'Y-m-d' }}" class="w-full px-3 py-2 border rounded-lg">
+            </div>
+            <button type="submit" class="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900">Check Slots</button>
+        </form>
+
+        {% if is_available %}
+            {% if available_slots %}
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mb-5">
+                    {% for slot in available_slots %}
+                    <form method="post" class="border rounded-lg p-3 hover:border-blue-400 transition-colors">
+                        {% csrf_token %}
+                        <input type="hidden" name="date" value="{{ selected_date_str }}">
+                        <input type="hidden" name="time" value="{{ slot.start_time|time:'H:i' }}">
+                        <p class="font-semibold text-gray-900">{{ slot.start_str }}</p>
+                        <p class="text-xs text-gray-500 mb-2">{{ slot.start_str }} - {{ slot.end_str }}</p>
+                        <textarea name="symptoms" rows="2" class="w-full px-2 py-1 border rounded text-sm mb-2" placeholder="Optional symptoms"></textarea>
+                        <button type="submit" class="w-full px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm">Book This Slot</button>
+                    </form>
                     {% endfor %}
                 </div>
-            </div>
-
-            <div class="flex justify-center">
-                <a href="{% url 'patient:book_appointment' %}?doctor={{ doctor.id }}" 
-                   class="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold">
-                    <i class="fas fa-calendar-plus mr-2"></i>Book Now
-                </a>
-            </div>
             {% else %}
-            <div class="text-center py-8">
-                <i class="fas fa-calendar-times text-4xl text-gray-400 mb-4"></i>
-                <p class="text-gray-600 mb-4">No available dates for booking</p>
-                <p class="text-sm text-gray-500">Please check back later or contact the clinic</p>
-            </div>
+                <div class="p-4 rounded-lg bg-yellow-50 border border-yellow-200 text-yellow-800 text-sm">
+                    No slots available on this date. Please choose another date.
+                </div>
             {% endif %}
-        </div>
+        {% else %}
+            <div class="p-4 rounded-lg bg-red-50 border border-red-200 text-red-800 text-sm">
+                Doctor is not available on {{ selected_date|date:"l, M d, Y" }}. Please choose a matching day.
+            </div>
+        {% endif %}
     </div>
+</div>
 {% endblock %}
