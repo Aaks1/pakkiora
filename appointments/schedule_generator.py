@@ -171,7 +171,7 @@ class ScheduleGeneratorService:
         if local_datetime.tzinfo is None:
             local_datetime = timezone.make_aware(local_datetime, local_tz)
         
-        return timezone.make_naive(local_datetime, timezone.UTC)
+        return timezone.make_aware(local_datetime.astimezone(timezone.UTC), timezone.UTC)
     
     @transaction.atomic
     def regenerate_slots_for_date_range(self, doctor, start_date: date, end_date: date) -> dict:
