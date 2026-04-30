@@ -6,11 +6,11 @@ from django.db import transaction
 from django.db.models import Q
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.forms import PasswordChangeForm
-from django.views.generic import ListView
+from django.views.generic import ListView, DetailView
 
 from datetime import datetime, timedelta
 
-from doctors.models import Doctor, DoctorTimeSlot, Patient
+from doctors.models import Doctor, DoctorTimeSlot, DoctorSchedule, Patient
 from .models import Appointment
 from .forms import BookAppointmentForm
 from .schedule_generator import ScheduleGeneratorService
@@ -324,3 +324,67 @@ def patient_profile(request):
     }
     
     return render(request, 'patient/profile.html', context)
+
+
+@login_required
+def past_appointments(request):
+    """Show all patient appointments (past, present, cancelled)"""
+    user = request.user
+    
+    # Get all appointments for this patient
+    appointments = Appointment.objects.filter(
+        patient=user
+    ).select_related('doctor').order_by('-date', '-start_time')
+    
+    # Filter by status if requested
+    status_filter = request.GET.get('status')
+    if status_filter and status_filter != 'all':
+        appointments = appointments.filter(status=status_filter.upper())
+    
+    # Separate appointments by status for display
+    upcoming_appointments = appointments.filter(
+        date__gte=timezone.now().date(),
+        status='BOOKED'
+    )
+    past_appointments = appointments.filter(
+        date__lt=timezone.now().date()
+    )
+    cancelled_appointments = appointments.filter(status='CANCELLED')
+    completed_appointments = appointments.filter(status='COMPLETED')
+    no_show_appointments = appointments.filter(status='NO_SHOW')
+    
+    context = {
+        'all_appointments': appointments,
+        'upcoming_appointments': upcoming_appointments,
+        'past_appointments': past_appointments,
+        'cancelled_appointments': cancelled_appointments,
+        'completed_appointments': completed_appointments,
+        'no_show_appointments': no_show_appointments,
+        'status_filter': status_filter or 'all',
+        'total_count': appointments.count(),
+    }
+    
+    return render(request, 'patient/past_appointments.html', context)
+
+
+class AppointmentListView(ListView):
+    """List patient's appointments"""
+    model = Appointment
+    template_name = 'patient/appointments/list.html'
+    context_object_name = 'appointments'
+    paginate_by = 20
+    
+    def get_queryset(self):
+        return Appointment.objects.filter(
+            patient=self.request.user
+        ).select_related('doctor').order_by('-date', '-start_time')
+
+
+class AppointmentDetailView(DetailView):
+    """View appointment details"""
+    model = Appointment
+    template_name = 'patient/appointments/detail.html'
+    pk_url_kwarg = 'appointment_id'
+    
+    def get_queryset(self):
+        return Appointment.objects.filter(patient=self.request.user)
