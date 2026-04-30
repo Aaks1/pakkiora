@@ -1,0 +1,87 @@
+{% extends 'admin/base.html' %}
+{% block title %}Edit Slots{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="mb-6">
+        <a href="{% url 'slot_management' %}" class="text-blue-600 hover:text-blue-800">
+            <i class="fas fa-arrow-left mr-2"></i>Back to Slot Management
+        </a>
+    </div>
+
+    <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+        <h1 class="text-xl font-bold text-gray-900 mb-2">Manage Slots</h1>
+        <p class="text-sm text-gray-600 mb-4">Dr. {{ doctor.first_name }} {{ doctor.last_name }} ({{ doctor.specialization }})</p>
+
+        <form method="post" class="space-y-5">
+            {% csrf_token %}
+            <div>
+                <p class="text-sm font-medium text-gray-700 mb-2">Available Days</p>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                    {% for value, label in day_choices %}
+                        <label class="flex items-center gap-2 border rounded-lg px-3 py-2">
+                            <input type="checkbox" name="available_days" value="{{ value }}" {% if value in doctor.available_days %}checked{% endif %}>
+                            <span>{{ label }}</span>
+                        </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Time Slots</label>
+                <input type="text" name="time_slots" value="{{ doctor.time_slots }}" class="w-full px-3 py-2 border rounded-lg" placeholder="09:00,09:30,10:00">
+                <p class="text-xs text-gray-500 mt-1">Comma-separated in 24-hour format.</p>
+            </div>
+
+            <div class="border-t pt-4">
+                <h2 class="font-semibold text-gray-900 mb-2">Date Override (Optional)</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-sm text-gray-700 mb-1">Date</label>
+                        <input type="date" name="override_date" class="w-full px-3 py-2 border rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-700 mb-1">Availability</label>
+                        <select name="override_is_available" class="w-full px-3 py-2 border rounded-lg">
+                            <option value="">Select</option>
+                            <option value="true">Available</option>
+                            <option value="false">Unavailable</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-700 mb-1">Notes</label>
+                        <input type="text" name="override_notes" class="w-full px-3 py-2 border rounded-lg" placeholder="Optional note">
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-end">
+                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Save Slot Settings</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="bg-white rounded-xl border border-gray-200 overflow-x-auto">
+        <div class="p-4 border-b"><h2 class="font-semibold">Recent Date Overrides</h2></div>
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="p-3 text-left">Date</th>
+                    <th class="p-3 text-left">Status</th>
+                    <th class="p-3 text-left">Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in overrides %}
+                <tr class="border-t">
+                    <td class="p-3">{{ item.date }}</td>
+                    <td class="p-3">{% if item.is_available %}Available{% else %}Unavailable{% endif %}</td>
+                    <td class="p-3">{{ item.notes|default:"-" }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="3" class="p-6 text-center text-gray-500">No overrides created yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

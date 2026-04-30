@@ -18,6 +18,17 @@
             <p><strong>Joined:</strong> {{ user.date_joined|date:"M d, Y" }}</p>
             <p><strong>Active:</strong> {{ user.is_active|yesno:"Yes,No" }}</p>
         </div>
+        {% if not is_admin %}
+        <div class="mt-5 flex gap-3">
+            <a href="{% url 'user_edit' user.id %}" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Edit Account</a>
+            <form method="post" action="{% url 'user_toggle_active' user.id %}">
+                {% csrf_token %}
+                <button type="submit" class="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700">
+                    {% if user.is_active %}Disable{% else %}Enable{% endif %} Account
+                </button>
+            </form>
+        </div>
+        {% endif %}
     </div>
 
     {% if appointments %}

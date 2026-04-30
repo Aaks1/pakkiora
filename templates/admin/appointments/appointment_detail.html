@@ -19,14 +19,15 @@
         </div>
         {% if appointment.symptoms %}<p class="mt-4"><strong>Symptoms:</strong> {{ appointment.symptoms }}</p>{% endif %}
         {% if appointment.notes %}<p class="mt-2"><strong>Notes:</strong> {{ appointment.notes }}</p>{% endif %}
+        <div class="mt-6 flex gap-3">
+            <a href="{% url 'admin_appointment_edit' appointment.id %}" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Edit Appointment</a>
         {% if appointment.status == 'BOOKED' %}
-        <div class="mt-6">
             <form method="post" action="{% url 'admin_cancel_appointment' appointment.id %}">
                 {% csrf_token %}
                 <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Cancel Appointment</button>
             </form>
-        </div>
         {% endif %}
+        </div>
     </div>
 </div>
 {% endblock %}

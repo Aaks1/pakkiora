@@ -10,7 +10,7 @@
                 <th class="p-3 text-left">Name</th>
                 <th class="p-3 text-left">Role</th>
                 <th class="p-3 text-left">Appointments</th>
-                <th class="p-3 text-left">Action</th>
+                <th class="p-3 text-left">Actions</th>
             </tr>
         </thead>
         <tbody>
@@ -20,7 +20,22 @@
                 <td class="p-3">{{ item.user.first_name }} {{ item.user.last_name }}</td>
                 <td class="p-3">{% if item.is_admin %}Admin{% elif item.is_patient %}Patient{% else %}User{% endif %}</td>
                 <td class="p-3">{{ item.appointment_count }}</td>
-                <td class="p-3"><a href="{% url 'user_detail' item.user.id %}" class="text-blue-600">View</a></td>
+                <td class="p-3">
+                    <a href="{% url 'user_detail' item.user.id %}" class="text-blue-600 mr-3">View</a>
+                    {% if not item.is_admin %}
+                        <a href="{% url 'user_edit' item.user.id %}" class="text-indigo-600 mr-3">Edit</a>
+                        <form method="post" action="{% url 'user_toggle_active' item.user.id %}" class="inline mr-3">
+                            {% csrf_token %}
+                            <button type="submit" class="text-orange-600">
+                                {% if item.user.is_active %}Disable{% else %}Enable{% endif %}
+                            </button>
+                        </form>
+                        <form method="post" action="{% url 'user_delete' item.user.id %}" class="inline">
+                            {% csrf_token %}
+                            <button type="submit" class="text-red-600">Delete</button>
+                        </form>
+                    {% endif %}
+                </td>
             </tr>
         {% empty %}
             <tr><td colspan="5" class="p-6 text-center text-gray-500">No users found.</td></tr>

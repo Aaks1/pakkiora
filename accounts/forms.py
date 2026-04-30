@@ -2,6 +2,7 @@ from django import forms
 from django.contrib.auth.models import User
 from django.core.validators import EmailValidator
 from .models import Doctor
+from appointments.models import Appointment
 
 class UserRegistrationForm(forms.ModelForm):
     """Form for user registration"""
@@ -149,3 +150,41 @@ class AdminUserForm(forms.ModelForm):
         if commit:
             user.save()
         return user
+
+
+class AdminAppointmentForm(forms.ModelForm):
+    """Admin form to edit appointment details."""
+
+    class Meta:
+        model = Appointment
+        fields = ['date', 'start_time', 'end_time', 'status', 'symptoms', 'notes']
+        widgets = {
+            'date': forms.DateInput(attrs={'type': 'date', 'class': 'form-input'}),
+            'start_time': forms.TimeInput(attrs={'type': 'time', 'class': 'form-input'}),
+            'end_time': forms.TimeInput(attrs={'type': 'time', 'class': 'form-input'}),
+            'status': forms.Select(attrs={'class': 'form-input'}),
+            'symptoms': forms.Textarea(attrs={'class': 'form-input', 'rows': 3}),
+            'notes': forms.Textarea(attrs={'class': 'form-input', 'rows': 3}),
+        }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        start_time = cleaned_data.get('start_time')
+        end_time = cleaned_data.get('end_time')
+        if start_time and end_time and end_time <= start_time:
+            raise forms.ValidationError("End time must be later than start time.")
+        return cleaned_data
+
+
+class PatientAccountForm(forms.ModelForm):
+    """Admin form to edit patient account details."""
+
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name', 'email', 'is_active']
+        widgets = {
+            'first_name': forms.TextInput(attrs={'class': 'form-input'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-input'}),
+            'email': forms.EmailInput(attrs={'class': 'form-input'}),
+            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }

@@ -8,9 +8,9 @@ from django.db.models import Q
 from django.utils import timezone
 from datetime import datetime, date, timedelta
 from .models import UserProfile, AdminProfile
-from doctors.models import Doctor, Patient
+from doctors.models import Doctor, Patient, DoctorAvailability
 from appointments.models import Appointment
-from .forms import UserRegistrationForm, AdminUserForm
+from .forms import UserRegistrationForm, AdminUserForm, AdminAppointmentForm, PatientAccountForm
 from doctors.forms import AddDoctorForm, DoctorUpdateForm
 from .default_admin import ensure_default_superuser, DEFAULT_ADMIN_USERNAME
 
@@ -228,11 +228,15 @@ def admin_dashboard(request):
         'id', 'first_name', 'last_name', 'specialization', 'created_at'
     ).order_by('-created_at')[:5]
     
+    today = timezone.now().date()
+    todays_appointments = Appointment.objects.filter(date=today, status='BOOKED').count()
+
     context = {
         'total_users': user_stats['total_users'],
         'total_doctors': doctor_stats['total_doctors'],
         'total_admins': user_stats['total_admins'],
         'active_doctors': doctor_stats['active_doctors'],
+        'todays_appointments': todays_appointments,
         'recent_users': recent_users,
         'recent_doctors': recent_doctors,
         'user': request.user,
@@ -493,6 +497,39 @@ def appointment_detail_admin(request, appointment_id):
 
 @login_required
 @user_passes_test(check_is_admin)
+def appointment_edit_admin(request, appointment_id):
+    """Admin edit appointment details."""
+    appointment = get_object_or_404(Appointment, id=appointment_id)
+
+    if request.method == 'POST':
+        form = AdminAppointmentForm(request.POST, instance=appointment)
+        if form.is_valid():
+            candidate = form.save(commit=False)
+
+            conflict = Appointment.objects.filter(
+                doctor=candidate.doctor,
+                date=candidate.date,
+                start_time=candidate.start_time,
+                status='BOOKED',
+            ).exclude(id=appointment.id).exists()
+
+            if conflict:
+                safe_message(request, 'error', 'This doctor already has a booked appointment at that time.')
+            else:
+                candidate.save()
+                safe_message(request, 'success', 'Appointment updated successfully.')
+                return redirect('admin_appointment_detail', appointment_id=appointment.id)
+    else:
+        form = AdminAppointmentForm(instance=appointment)
+
+    return render(request, 'admin/appointments/appointment_edit.html', {
+        'form': form,
+        'appointment': appointment,
+    })
+
+
+@login_required
+@user_passes_test(check_is_admin)
 def cancel_appointment_admin(request, appointment_id):
     """Admin cancel appointment"""
     appointment = get_object_or_404(Appointment, id=appointment_id)
@@ -590,6 +627,110 @@ def user_detail_admin(request, user_id):
         'appointments': appointments,
     }
     return render(request, 'admin/users/user_detail.html', context)
+
+
+@login_required
+@user_passes_test(check_is_admin)
+def user_edit_admin(request, user_id):
+    """Admin edit patient account details."""
+    user = get_object_or_404(User, id=user_id, is_staff=False)
+
+    if request.method == 'POST':
+        form = PatientAccountForm(request.POST, instance=user)
+        if form.is_valid():
+            form.save()
+            safe_message(request, 'success', f'Patient account "{user.username}" updated successfully.')
+            return redirect('user_detail', user_id=user.id)
+    else:
+        form = PatientAccountForm(instance=user)
+
+    return render(request, 'admin/users/user_edit.html', {
+        'form': form,
+        'selected_user': user,
+    })
+
+
+@login_required
+@user_passes_test(check_is_admin)
+def user_toggle_active_admin(request, user_id):
+    """Enable/disable patient account."""
+    if request.method == 'POST':
+        user = get_object_or_404(User, id=user_id, is_staff=False)
+        user.is_active = not user.is_active
+        user.save(update_fields=['is_active'])
+        status = 'activated' if user.is_active else 'deactivated'
+        safe_message(request, 'success', f'Patient account "{user.username}" {status}.')
+    return redirect('user_management')
+
+
+@login_required
+@user_passes_test(check_is_admin)
+def user_delete_admin(request, user_id):
+    """Delete a patient account."""
+    if request.method == 'POST':
+        user = get_object_or_404(User, id=user_id, is_staff=False)
+        username = user.username
+        user.delete()
+        safe_message(request, 'success', f'Patient account "{username}" deleted successfully.')
+    return redirect('user_management')
+
+
+@login_required
+@user_passes_test(check_is_admin)
+def slot_management(request):
+    """View and manage doctor slot configuration."""
+    search_query = request.GET.get('search', '')
+    doctors = Doctor.objects.all().order_by('first_name', 'last_name')
+
+    if search_query:
+        doctors = doctors.filter(
+            Q(first_name__icontains=search_query) |
+            Q(last_name__icontains=search_query) |
+            Q(specialization__icontains=search_query)
+        )
+
+    return render(request, 'admin/slots/slot_list.html', {
+        'doctors': doctors,
+        'search_query': search_query,
+    })
+
+
+@login_required
+@user_passes_test(check_is_admin)
+def slot_edit(request, doctor_id):
+    """Edit a doctor's available days and time slots."""
+    doctor = get_object_or_404(Doctor, id=doctor_id)
+    day_choices = Doctor.DAY_CHOICES
+
+    if request.method == 'POST':
+        selected_days = request.POST.getlist('available_days')
+        time_slots = request.POST.get('time_slots', '').strip()
+        override_date = request.POST.get('override_date')
+        override_is_available = request.POST.get('override_is_available')
+        override_notes = request.POST.get('override_notes', '').strip()
+
+        doctor.available_days = selected_days
+        doctor.time_slots = time_slots
+        doctor.save(update_fields=['available_days', 'time_slots', 'updated_at'])
+
+        if override_date and override_is_available in {'true', 'false'}:
+            availability, _ = DoctorAvailability.objects.get_or_create(
+                doctor=doctor,
+                date=override_date,
+            )
+            availability.is_available = (override_is_available == 'true')
+            availability.notes = override_notes
+            availability.save()
+
+        safe_message(request, 'success', f'Slots updated for Dr. {doctor.first_name} {doctor.last_name}.')
+        return redirect('slot_edit', doctor_id=doctor.id)
+
+    overrides = doctor.availabilities.order_by('-date')[:20]
+    return render(request, 'admin/slots/slot_edit.html', {
+        'doctor': doctor,
+        'day_choices': day_choices,
+        'overrides': overrides,
+    })
 
 
 # -----------------------------

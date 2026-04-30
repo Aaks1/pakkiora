@@ -42,6 +42,7 @@
                 <td class="p-3">{{ appointment.status }}</td>
                 <td class="p-3">
                     <a href="{% url 'admin_appointment_detail' appointment.id %}" class="text-blue-600 mr-3">View</a>
+                    <a href="{% url 'admin_appointment_edit' appointment.id %}" class="text-indigo-600 mr-3">Edit</a>
                     {% if appointment.status == 'BOOKED' %}
                     <form method="post" action="{% url 'admin_cancel_appointment' appointment.id %}" class="inline">
                         {% csrf_token %}

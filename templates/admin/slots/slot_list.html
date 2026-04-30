@@ -1,0 +1,44 @@
+{% extends 'admin/base.html' %}
+{% block title %}Manage Slots{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">Appointment Slots</h1>
+</div>
+
+<div class="bg-white rounded-xl border border-gray-200">
+    <div class="p-4 border-b">
+        <form method="get" class="flex gap-3">
+            <input type="text" name="search" value="{{ search_query }}" placeholder="Search doctors..." class="flex-1 px-3 py-2 border rounded-lg">
+            <button type="submit" class="px-4 py-2 bg-gray-800 text-white rounded-lg">Search</button>
+        </form>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="p-3 text-left">Doctor</th>
+                    <th class="p-3 text-left">Specialization</th>
+                    <th class="p-3 text-left">Available Days</th>
+                    <th class="p-3 text-left">Time Slots</th>
+                    <th class="p-3 text-left">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for doctor in doctors %}
+                <tr class="border-t">
+                    <td class="p-3">Dr. {{ doctor.first_name }} {{ doctor.last_name }}</td>
+                    <td class="p-3">{{ doctor.specialization }}</td>
+                    <td class="p-3">{{ doctor.available_days|join:", "|default:"-" }}</td>
+                    <td class="p-3">{{ doctor.time_slots|default:"-" }}</td>
+                    <td class="p-3">
+                        <a href="{% url 'slot_edit' doctor.id %}" class="text-indigo-600">Manage</a>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="5" class="p-6 text-center text-gray-500">No doctors found.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
