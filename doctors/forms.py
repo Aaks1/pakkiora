@@ -69,15 +69,24 @@ class AddDoctorForm(forms.ModelForm):
     )
     
     # Time Slots
-    time_slots = forms.CharField(
-        widget=forms.Textarea(attrs={
+    start_time = forms.TimeField(
+        widget=forms.TimeInput(attrs={
             'class': 'form-control',
-            'rows': 3,
-            'placeholder': '09:00, 10:30, 14:00, 15:30',
-            'help_text': 'Enter time slots separated by commas. Use 24-hour format e.g. 09:00,10:30,14:00'
+            'type': 'time',
+            'placeholder': '09:00'
         }),
         required=False,
-        help_text='Enter time slots separated by commas. Use 24-hour format e.g. 09:00,10:30,14:00'
+        help_text='Start time for appointments (24-hour format)'
+    )
+    
+    end_time = forms.TimeField(
+        widget=forms.TimeInput(attrs={
+            'class': 'form-control',
+            'type': 'time',
+            'placeholder': '17:00'
+        }),
+        required=False,
+        help_text='End time for appointments (24-hour format)'
     )
     
     class Meta:
@@ -161,13 +170,11 @@ class AddDoctorForm(forms.ModelForm):
             
             # Create availability based on available days and time slots
             available_days = self.cleaned_data.get('available_days', [])
-            time_slots = self.cleaned_data.get('time_slots', '')
+            start_time = self.cleaned_data.get('start_time')
+            end_time = self.cleaned_data.get('end_time')
             
-            if available_days and time_slots:
-                # Parse time slots
-                slot_list = [slot.strip() for slot in time_slots.split(',') if slot.strip()]
-                
-                # Create availability for next 30 days
+            if available_days and start_time and end_time:
+                # Create availability for next 30 days with 30-minute slots
                 from datetime import datetime, timedelta
                 today = timezone.now().date()
                 
@@ -176,21 +183,21 @@ class AddDoctorForm(forms.ModelForm):
                     day_name = date.strftime('%A').lower()
                     
                     if day_name in available_days:
-                        for slot in slot_list:
-                            try:
-                                # Parse time slot
-                                time_obj = datetime.strptime(slot, '%H:%M').time()
-                                
-                                # Create availability for this time slot
+                        # Generate slots from start_time to end_time with 30-minute intervals
+                        current_time = datetime.combine(date, start_time)
+                        end_datetime = datetime.combine(date, end_time)
+                        
+                        while current_time < end_datetime:
+                            next_time = current_time + timedelta(minutes=30)
+                            if next_time <= end_datetime:
                                 DoctorAvailability.objects.create(
                                     doctor=doctor,
                                     date=date,
-                                    start_time=time_obj,
-                                    end_time=(datetime.combine(date, time_obj) + timedelta(minutes=30)).time(),
+                                    start_time=current_time.time(),
+                                    end_time=next_time.time(),
                                     is_available=True
                                 )
-                            except ValueError:
-                                continue  # Skip invalid time formats
+                            current_time = next_time
         
         return doctor
 

@@ -231,19 +231,34 @@
                 
                 <!-- Time Slots -->
                 <div class="p-4 bg-gray-50 rounded-lg">
-                    <label for="{{ form.time_slots.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-3">
                         <i class="fas fa-clock mr-1"></i>Time Slots
                     </label>
-                    {{ form.time_slots }}
-                    <p class="text-gray-500 text-sm mt-2">
-                        <strong>Format:</strong> Enter time slots separated by commas. Use 24-hour format e.g. 09:00,10:30,14:00
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="{{ form.start_time.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                                Start Time
+                            </label>
+                            {{ form.start_time }}
+                            <p class="text-gray-500 text-xs mt-1">When appointments can begin (24-hour format)</p>
+                            {% if form.start_time.errors %}
+                                <div class="text-red-500 text-sm mt-1">{{ form.start_time.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <label for="{{ form.end_time.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                                End Time
+                            </label>
+                            {{ form.end_time }}
+                            <p class="text-gray-500 text-xs mt-1">When appointments can end (24-hour format)</p>
+                            {% if form.end_time.errors %}
+                                <div class="text-red-500 text-sm mt-1">{{ form.end_time.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <p class="text-gray-500 text-sm mt-3">
+                        <strong>Example:</strong> Start: 09:00, End: 17:00 will create 30-minute slots from 9 AM to 5 PM
                     </p>
-                    <p class="text-gray-400 text-xs mt-1">
-                        Example: 09:00,09:30,10:00,10:30,11:00,14:00,14:30,15:00
-                    </p>
-                    {% if form.time_slots.errors %}
-                        <div class="text-red-500 text-sm mt-1">{{ form.time_slots.errors.0 }}</div>
-                    {% endif %}
                 </div>
             </div>
 
