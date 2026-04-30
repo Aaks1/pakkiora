@@ -164,6 +164,7 @@ def doctor_detail(request, doctor_id):
                 available_slots.append({
                     'date': current_date,
                     'day_name': current_date.strftime('%A'),
+                    'day_name_short': current_date.strftime('%A')[:3],  # Add short day name
                     'slots': slots,
                     'working_hours': f"{start_time.strftime('%H:%M')} - {end_time.strftime('%H:%M')}",
                     'total_slots': len(slots)
