@@ -31,9 +31,19 @@ class ScheduleGeneratorService:
             int: Number of slots generated
             
         Raises:
-            ValueError: If no schedule template exists for the weekday
+            ValueError: If no schedule template exists for the weekday or date is beyond 7 days
         """
         from doctors.models import DoctorSchedule, DoctorTimeSlot
+        from django.utils import timezone
+        
+        # Enforce 7-day limit
+        today = timezone.now().date()
+        days_ahead = (target_date - today).days
+        if days_ahead > 7:
+            raise ValueError(f"Cannot generate slots more than 7 days in advance. Requested date is {days_ahead} days ahead.")
+        
+        if target_date < today:
+            raise ValueError(f"Cannot generate slots for past dates. Requested date is {target_date}")
         
         # Check if slots already exist for this date
         existing_slots_count = DoctorTimeSlot.objects.filter(

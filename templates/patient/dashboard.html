@@ -228,6 +228,22 @@
                             <p class="text-gray-600 mb-2">{{ doctor.specialization }}</p>
                             <p class="text-sm text-gray-500 mb-3">{{ doctor.experience_years|default:0 }} years experience</p>
                             
+                            <!-- Working Days -->
+                            <div class="mb-3">
+                                <p class="text-xs text-gray-500 mb-1">Working Days:</p>
+                                <div class="flex flex-wrap gap-1">
+                                    {% for schedule in doctor.schedules.all %}
+                                        {% if schedule.is_active %}
+                                            <span class="inline-block px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded">
+                                                {{ schedule.day_of_week }}
+                                            </span>
+                                        {% endif %}
+                                    {% empty %}
+                                        <span class="text-xs text-gray-400">No schedule set</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            
                             <div class="space-y-1">
                                 <div class="flex items-center text-sm text-gray-600">
                                     <i class="fas fa-hospital-alt mr-2 text-gray-400"></i>

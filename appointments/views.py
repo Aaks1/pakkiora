@@ -40,8 +40,9 @@ def patient_dashboard(request):
     upcoming_appointments = [apt for apt in all_appointments if apt.date >= today and apt.status == 'BOOKED']
     past_appointments = [apt for apt in all_appointments if apt.date < today][:5]
     
-    # Get available doctors with prefetch
-    doctors = Doctor.objects.filter(is_active=True).only('id', 'first_name', 'last_name', 'specialization')
+    # Get available doctors with prefetch for schedules
+    from doctors.models import DoctorSchedule
+    doctors = Doctor.objects.filter(is_active=True).prefetch_related('schedules').only('id', 'first_name', 'last_name', 'specialization')
     
     # Get specializations efficiently
     specializations = list(set(doctor.specialization for doctor in doctors))
@@ -90,15 +91,67 @@ def doctor_list(request):
 
 @login_required
 def doctor_detail(request, doctor_id):
-    """View doctor details"""
-    from doctors.models import Doctor
+    """View doctor details with available days and slots"""
+    from doctors.models import Doctor, DoctorTimeSlot
+    from .schedule_generator import ScheduleGeneratorService
+    from datetime import timedelta, datetime
     
     doctor = get_object_or_404(Doctor, id=doctor_id, is_active=True)
+    today = timezone.now().date()
+    
+    # Generate slots for next 7 days
+    schedule_service = ScheduleGeneratorService()
+    available_days = []
+    
+    for i in range(7):  # Next 7 days
+        target_date = today + timedelta(days=i)
+        try:
+            # Generate slots for this date
+            schedule_service.generate_daily_slots(doctor, target_date)
+            
+            # Check available slots for this date
+            available_slots_count = DoctorTimeSlot.objects.filter(
+                doctor=doctor,
+                date=target_date,
+                status='available'
+            ).count()
+            
+            if available_slots_count > 0:
+                available_days.append({
+                    'date': target_date,
+                    'available_slots': available_slots_count,
+                    'day_name': target_date.strftime('%A'),
+                    'formatted_date': target_date.strftime('%b %d')
+                })
+        except ValueError as e:
+            # Skip days without schedule or beyond 7 days
+            continue
+    
+    # Handle specific date selection
+    selected_date_str = request.GET.get('date')
+    selected_date_slots = []
+    
+    if selected_date_str:
+        try:
+            selected_date = datetime.strptime(selected_date_str, '%Y-%m-%d').date()
+            
+            # Validate date is within 7 days
+            days_ahead = (selected_date - today).days
+            if 0 <= days_ahead <= 7:
+                # Get available slots for selected date
+                selected_date_slots = DoctorTimeSlot.objects.filter(
+                    doctor=doctor,
+                    date=selected_date,
+                    status='available'
+                ).order_by('start_datetime')
+        except ValueError:
+            pass
     
     context = {
         'doctor': doctor,
-        'available_slots': [],  # Empty for now
-        'today': timezone.now().date(),
+        'available_days': available_days,
+        'selected_date_slots': selected_date_slots,
+        'today': today,
     }
     return render(request, 'patient/doctors/doctor_profile_final.html', context)
 
