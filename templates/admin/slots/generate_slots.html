@@ -18,40 +18,95 @@
 
     <div class="row">
         <div class="col-lg-8">
-            <!-- Slot Generation Form -->
-            <div class="card">
+            <!-- Doctor Selection -->
+            <div class="card mb-4">
                 <div class="card-header">
-                    <h5><i class="fas fa-plus-circle"></i> Generate New Slots</h5>
+                    <h5><i class="fas fa-user-md"></i> Select Doctor</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="doctorForm">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label for="doctor_id" class="form-label">Select Doctor</label>
+                            <select class="form-control" id="doctor_id" name="doctor_id" required onchange="this.form.submit()">
+                                <option value="">Choose a doctor...</option>
+                                {% for doctor in doctors %}
+                                <option value="{{ doctor.id }}" {% if selected_doctor_id == doctor.id|stringformat:"s" %}selected{% endif %}>
+                                    Dr. {{ doctor.first_name }} {{ doctor.last_name }} - {{ doctor.specialization }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            {% if selected_doctor_id %}
+            <!-- Manual Slot Creation -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-plus-circle"></i> Create Manual Slot</h5>
                 </div>
                 <div class="card-body">
                     <form method="post">
                         {% csrf_token %}
+                        <input type="hidden" name="action" value="add_manual_slot">
+                        <input type="hidden" name="doctor_id" value="{{ selected_doctor_id }}">
+                        
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="slot_date" class="form-label">Date</label>
+                                    <input type="date" class="form-control" id="slot_date" name="slot_date" 
+                                           value="{{ today|date:'Y-m-d' }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="start_time" class="form-label">Start Time</label>
+                                    <input type="time" class="form-control" id="start_time" name="start_time" required>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="end_time" class="form-label">End Time</label>
+                                    <input type="time" class="form-control" id="end_time" name="end_time" required>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-plus"></i> Create Manual Slot
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Batch Slot Generation -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-cogs"></i> Generate Slots from Schedule</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="generate_range">
+                        <input type="hidden" name="doctor_id" value="{{ selected_doctor_id }}">
                         
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label for="doctor_id" class="form-label">Select Doctor</label>
-                                    <select class="form-control" id="doctor_id" name="doctor_id" required>
-                                        <option value="">Choose a doctor...</option>
-                                        {% for doctor in doctors %}
-                                        <option value="{{ doctor.id }}">
-                                            Dr. {{ doctor.first_name }} {{ doctor.last_name }} - {{ doctor.specialization }}
-                                        </option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="form-group">
                                     <label for="start_date" class="form-label">Start Date</label>
-                                    <input type="date" class="form-control" id="start_date" name="start_date" 
+                                    <input type="date" class="form-control" name="start_date" 
                                            value="{{ today|date:'Y-m-d' }}" required>
                                 </div>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="end_date" class="form-label">End Date</label>
-                                    <input type="date" class="form-control" id="end_date" name="end_date" 
+                                    <input type="date" class="form-control" name="end_date" 
                                            value="{{ today|date:'Y-m-d' }}" required>
                                 </div>
                             </div>
@@ -59,12 +114,13 @@
                         
                         <div class="form-group">
                             <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-cogs"></i> Generate Slots
+                                <i class="fas fa-cogs"></i> Generate Slots from Schedule
                             </button>
                         </div>
                     </form>
                 </div>
             </div>
+            {% endif %}
 
             <!-- Generation Results -->
             {% if generated_slots %}
