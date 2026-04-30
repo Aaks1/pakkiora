@@ -7,79 +7,29 @@
 {% endblock %}
 
 {% block content %}
-<div class="container mx-auto px-4 py-8 admin-form-page">
+<div class="max-w-5xl mx-auto admin-form-page">
     <!-- Page Header -->
-    <div class="mb-8">
-        <div class="flex items-center justify-between">
-            <div>
-                <h1 class="text-3xl font-bold text-gray-800">Add Doctor</h1>
-                <p class="text-gray-600 mt-2">Fill in the details to create a new doctor account.</p>
-            </div>
-            <div>
-                <a href="{% url 'doctor_list' %}" class="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition-colors">
-                    <i class="fas fa-arrow-left mr-2"></i>Back to Doctors
-                </a>
-            </div>
+    <div class="mb-6">
+        <div>
+            <a href="{% url 'doctor_list' %}" class="text-blue-600 hover:text-blue-800 transition-colors">
+                <i class="fas fa-arrow-left mr-2"></i>Back to Doctors
+            </a>
         </div>
     </div>
 
     <!-- Add Doctor Form -->
-    <div class="bg-white rounded-lg shadow-md p-6 admin-form-shell">
+    <div class="bg-white shadow-lg rounded-xl border border-gray-200 overflow-hidden admin-form-shell">
+        <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
+            <h2 class="text-xl font-semibold text-white flex items-center">
+                <i class="fas fa-user-doctor mr-3"></i>
+                Create Doctor
+            </h2>
+            <p class="text-blue-100 text-sm mt-1">Fill in the details to create a new doctor profile.</p>
+        </div>
+        <div class="p-6">
         <form method="post" id="add-doctor-form" class="admin-form">
             {% csrf_token %}
             
-            <!-- Account Details Section -->
-            <div class="mb-8">
-                <div class="border-b pb-4 mb-6">
-                    <h2 class="text-xl font-semibold text-gray-800">
-                        <i class="fas fa-user-circle mr-2"></i>Account Details
-                    </h2>
-                    <p class="text-gray-600 text-sm mt-1">Create login credentials for the doctor</p>
-                </div>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label for="{{ form.username.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
-                            Username <span class="text-red-500">*</span>
-                        </label>
-                        {{ form.username }}
-                        {% if form.username.errors %}
-                            <div class="text-red-500 text-sm mt-1">{{ form.username.errors.0 }}</div>
-                        {% endif %}
-                    </div>
-                    
-                    <div>
-                        <label for="{{ form.email.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
-                            Email <span class="text-red-500">*</span>
-                        </label>
-                        {{ form.email }}
-                        {% if form.email.errors %}
-                            <div class="text-red-500 text-sm mt-1">{{ form.email.errors.0 }}</div>
-                        {% endif %}
-                    </div>
-                    
-                    <div>
-                        <label for="{{ form.password.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
-                            Password <span class="text-red-500">*</span>
-                        </label>
-                        {{ form.password }}
-                        {% if form.password.errors %}
-                            <div class="text-red-500 text-sm mt-1">{{ form.password.errors.0 }}</div>
-                        {% endif %}
-                    </div>
-                    
-                    <div>
-                        <label for="{{ form.confirm_password.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
-                            Confirm Password <span class="text-red-500">*</span>
-                        </label>
-                        {{ form.confirm_password }}
-                        {% if form.confirm_password.errors %}
-                            <div class="text-red-500 text-sm mt-1">{{ form.confirm_password.errors.0 }}</div>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-
             <!-- Doctor Details Section -->
             <div class="mb-8">
                 <div class="border-b pb-4 mb-6">
@@ -302,6 +252,7 @@
                 </button>
             </div>
         </form>
+        </div>
     </div>
 </div>
 
