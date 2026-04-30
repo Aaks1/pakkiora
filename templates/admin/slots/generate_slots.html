@@ -1,0 +1,184 @@
+{% extends 'admin/base.html' %}
+{% load static %}
+
+{% block title %}Generate Time Slots - DoctorX Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1><i class="fas fa-clock"></i> Generate Time Slots</h1>
+                <a href="{% url 'admin_dashboard' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Slot Generation Form -->
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-plus-circle"></i> Generate New Slots</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="doctor_id" class="form-label">Select Doctor</label>
+                                    <select class="form-control" id="doctor_id" name="doctor_id" required>
+                                        <option value="">Choose a doctor...</option>
+                                        {% for doctor in doctors %}
+                                        <option value="{{ doctor.id }}">
+                                            Dr. {{ doctor.first_name }} {{ doctor.last_name }} - {{ doctor.specialization }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label for="start_date" class="form-label">Start Date</label>
+                                    <input type="date" class="form-control" id="start_date" name="start_date" 
+                                           value="{{ today|date:'Y-m-d' }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label for="end_date" class="form-label">End Date</label>
+                                    <input type="date" class="form-control" id="end_date" name="end_date" 
+                                           value="{{ today|date:'Y-m-d' }}" required>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-cogs"></i> Generate Slots
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Generation Results -->
+            {% if generated_slots %}
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-check-circle"></i> Generation Results</h5>
+                </div>
+                <div class="card-body">
+                    {% for result in generated_slots %}
+                    <div class="alert alert-success">
+                        <h6>Dr. {{ result.doctor.first_name }} {{ result.doctor.last_name }}</h6>
+                        <p class="mb-1">
+                            <strong>Period:</strong> {{ result.start_date }} to {{ result.end_date }}
+                        </p>
+                        <p class="mb-0">
+                            <strong>Slots Generated:</strong> {{ result.stats.slots_generated }}
+                            <span class="text-muted">({{ result.stats.days_with_templates }} days with schedules)</span>
+                        </p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if errors %}
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-exclamation-triangle"></i> Errors</h5>
+                </div>
+                <div class="card-body">
+                    {% for error in errors %}
+                    <div class="alert alert-danger">{{ error }}</div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Existing Slots Overview -->
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-list"></i> Existing Slots (Next 7 Days)</h5>
+                </div>
+                <div class="card-body">
+                    {% for doctor in doctors %}
+                    <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
+                        <div>
+                            <strong>Dr. {{ doctor.first_name }} {{ doctor.last_name }}</strong>
+                            <br>
+                            <small class="text-muted">{{ doctor.specialization }}</small>
+                        </div>
+                        <div class="text-right">
+                            <span class="badge badge-primary">{{ existing_slots|lookup:doctor.id }}</span>
+                            <br>
+                            <small class="text-muted">available slots</small>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="text-muted">No active doctors found.</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-bolt"></i> Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">Generate slots for common date ranges:</p>
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-outline-primary btn-sm" onclick="setDateRange('today', 'today')">
+                            Today Only
+                        </button>
+                        <button class="btn btn-outline-primary btn-sm" onclick="setDateRange('today', 'week')">
+                            Next 7 Days
+                        </button>
+                        <button class="btn btn-outline-primary btn-sm" onclick="setDateRange('today', 'month')">
+                            Next 30 Days
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function setDateRange(start, end) {
+    const today = new Date();
+    const startDate = document.getElementById('start_date');
+    const endDate = document.getElementById('end_date');
+    
+    if (start === 'today') {
+        startDate.value = today.toISOString().split('T')[0];
+    }
+    
+    if (end === 'today') {
+        endDate.value = today.toISOString().split('T')[0];
+    } else if (end === 'week') {
+        const weekEnd = new Date(today);
+        weekEnd.setDate(today.getDate() + 6);
+        endDate.value = weekEnd.toISOString().split('T')[0];
+    } else if (end === 'month') {
+        const monthEnd = new Date(today);
+        monthEnd.setDate(today.getDate() + 29);
+        endDate.value = monthEnd.toISOString().split('T')[0];
+    }
+}
+
+// Custom filter for dictionary lookup
+document.addEventListener('DOMContentLoaded', function() {
+    // Add any additional JavaScript if needed
+});
+</script>
+{% endblock %}

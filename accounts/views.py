@@ -6,6 +6,7 @@ from django.contrib import messages
 from django.contrib.auth.models import User
 from django.db.models import Q
 from django.utils import timezone
+from datetime import datetime, date, timedelta
 from .models import UserProfile, AdminProfile
 from doctors.models import Doctor, DoctorSchedule, Patient
 from appointments.models import Appointment
@@ -722,6 +723,81 @@ def user_detail_admin(request, user_id):
         'appointments': appointments,
     }
     return render(request, 'admin/users/user_detail.html', context)
+
+
+@login_required
+@user_passes_test(check_is_admin)
+def slot_generation_admin(request):
+    """Admin manual slot generation interface"""
+    from django.utils import timezone
+    from appointments.schedule_generator import ScheduleGeneratorService
+    from datetime import date, timedelta
+    
+    today = timezone.now().date()
+    schedule_service = ScheduleGeneratorService()
+    
+    # Get all active doctors
+    doctors = Doctor.objects.filter(is_active=True)
+    
+    generated_slots = []
+    errors = []
+    
+    if request.method == 'POST':
+        doctor_id = request.POST.get('doctor_id')
+        start_date = request.POST.get('start_date')
+        end_date = request.POST.get('end_date')
+        
+        if doctor_id and start_date and end_date:
+            try:
+                doctor = Doctor.objects.get(id=doctor_id, is_active=True)
+                start_date_obj = datetime.strptime(start_date, '%Y-%m-%d').date()
+                end_date_obj = datetime.strptime(end_date, '%Y-%m-%d').date()
+                
+                # Generate slots for date range
+                stats = schedule_service.regenerate_slots_for_date_range(
+                    doctor, start_date_obj, end_date_obj
+                )
+                
+                generated_slots.append({
+                    'doctor': doctor,
+                    'stats': stats,
+                    'start_date': start_date_obj,
+                    'end_date': end_date_obj
+                })
+                
+                safe_message(request, 'success', f'Successfully generated {stats["slots_generated"]} slots for Dr. {doctor.first_name} {doctor.last_name}')
+                
+            except Exception as e:
+                errors.append(str(e))
+                safe_message(request, 'error', f'Error generating slots: {str(e)}')
+        else:
+            safe_message(request, 'error', 'Please select a doctor and date range')
+    
+    # Get existing slots for next 7 days
+    date_range = []
+    for i in range(7):
+        check_date = today + timedelta(days=i)
+        date_range.append(check_date)
+    
+    existing_slots = {}
+    for doctor in doctors:
+        slots_count = DoctorTimeSlot.objects.filter(
+            doctor=doctor,
+            date__in=date_range,
+            status='available'
+        ).count()
+        existing_slots[doctor.id] = slots_count
+    
+    context = {
+        'doctors': doctors,
+        'generated_slots': generated_slots,
+        'errors': errors,
+        'existing_slots': existing_slots,
+        'today': today,
+        'date_range': date_range,
+    }
+    
+    return render(request, 'admin/slots/generate_slots.html', context)
 
 
 
