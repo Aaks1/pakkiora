@@ -170,25 +170,14 @@
                                     </div>
                                 </div>
                                 <div class="flex items-center space-x-3 mt-4 lg:mt-0 lg:ml-4">
-                                    <a href="{% url 'patient:appointment_detail' appointment.id %}" 
-                                       class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                                        <i class="fas fa-eye mr-2"></i>
-                                        View Details
-                                    </a>
-                                    {% if appointment.status == 'BOOKED' %}
-                                        <a href="{% url 'patient:doctor_detail' appointment.doctor.id %}" 
-                                           class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                                            <i class="fas fa-phone mr-2"></i>
-                                            Contact
-                                        </a>
-                                    {% elif appointment.status == 'COMPLETED' %}
-                                        <a href="{% url 'patient:doctor_detail' appointment.doctor.id %}" 
+                                    {% if appointment.status == 'COMPLETED' %}
+                                        <a href="{% url 'patient:doctors' %}" 
                                            class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
                                             <i class="fas fa-calendar-plus mr-2"></i>
                                             Book Follow-up
                                         </a>
                                     {% elif appointment.status == 'CANCELLED' or appointment.status == 'NO_SHOW' %}
-                                        <a href="{% url 'patient:doctor_detail' appointment.doctor.id %}" 
+                                        <a href="{% url 'patient:doctors' %}" 
                                            class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
                                             <i class="fas fa-calendar-plus mr-2"></i>
                                             Rebook
