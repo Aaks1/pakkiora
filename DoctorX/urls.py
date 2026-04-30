@@ -6,7 +6,6 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 import accounts.views
-import appointments.views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -43,15 +42,8 @@ urlpatterns = [
     path('admin-dashboard/users/', accounts.views.user_management, name='user_management'),
     path('admin-dashboard/users/<int:user_id>/', accounts.views.user_detail_admin, name='user_detail'),
     
-    # Patient Dashboard (moved here to avoid circular import)
-    path('patient/', appointments.views.patient_dashboard, name='patient_dashboard'),
-    path('patient/doctors/', appointments.views.doctor_list, name='patient_doctors'),
-    path('patient/doctors/<int:doctor_id>/', appointments.views.doctor_detail, name='patient_doctor_detail'),
-    path('patient/appointments/book/<int:doctor_id>/<str:date>/<str:start_time>/', appointments.views.book_appointment, name='patient_book_appointment'),
-    path('patient/appointments/<int:appointment_id>/', appointments.views.appointment_detail, name='patient_appointment_detail'),
-    path('patient/profile/', appointments.views.patient_profile, name='patient_profile'),
-    path('patient/change-password/', appointments.views.change_password, name='patient_change_password'),
-    path('patient/appointments/', appointments.views.past_appointments, name='patient_past_appointments'),
+    # Patient Appointments
+    path('patient/', include(('appointments.urls', 'appointments'), namespace='patient')),
     
     # Home/Landing
     path('', accounts.views.home, name='home'),
