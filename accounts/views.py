@@ -388,7 +388,7 @@ def doctor_create(request):
             doctor = form.save()
             
             safe_message(request, 'success', f'Dr. {doctor.first_name} {doctor.last_name} created successfully!')
-            return redirect('admin:doctor_list')
+            return redirect('doctor_list')
         else:
             # Form is not valid, show errors
             for field, errors in form.errors.items():
@@ -410,7 +410,7 @@ def doctor_edit(request, doctor_id):
         if form.is_valid():
             form.save()
             safe_message(request, 'success', f'Dr. {doctor.first_name} {doctor.last_name} updated successfully!')
-            return redirect('admin:doctor_list')
+            return redirect('doctor_list')
     else:
         form = AddDoctorForm(instance=doctor)
     
@@ -706,7 +706,7 @@ def add_doctor(request):
         if form.is_valid():
             doctor = form.save()
             safe_message(request, 'success', f'Dr. {doctor.first_name} {doctor.last_name} has been added successfully!')
-            return redirect('admin:doctor_list')
+            return redirect('doctor_list')
     else:
         form = AddDoctorForm()
     
