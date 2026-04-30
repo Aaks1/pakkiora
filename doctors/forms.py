@@ -69,43 +69,31 @@ class AddDoctorForm(forms.ModelForm):
     )
     
     # Time Slots
-    start_time = forms.TimeField(
-        widget=forms.TimeInput(attrs={
+    time_slots = forms.CharField(
+        widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'type': 'time',
-            'placeholder': '09:00'
+            'placeholder': '09:00,10:30,14:00'
         }),
         required=False,
-        help_text='Start time for appointments (24-hour format)'
-    )
-    
-    end_time = forms.TimeField(
-        widget=forms.TimeInput(attrs={
-            'class': 'form-control',
-            'type': 'time',
-            'placeholder': '17:00'
-        }),
-        required=False,
-        help_text='End time for appointments (24-hour format)'
+        help_text='Enter time slots separated by commas. Use 24-hour format e.g. 09:00,10:30,14:00'
     )
     
     class Meta:
         model = Doctor
         fields = [
-            'first_name', 'last_name', 'email', 'date_of_birth', 'phone', 'address',
+            'first_name', 'last_name', 'email', 'phone', 'address',
             'qualification', 'experience_years', 'license_number', 'department', 'bio'
         ]
         widgets = {
             'first_name': forms.TextInput(attrs={'class': 'form-control', 'required': True}),
             'last_name': forms.TextInput(attrs={'class': 'form-control', 'required': True}),
             'email': forms.EmailInput(attrs={'class': 'form-control', 'required': True}),
-            'date_of_birth': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-            'phone': forms.TextInput(attrs={'class': 'form-control'}),
+            'phone': forms.TextInput(attrs={'class': 'form-control', 'required': True}),
             'address': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
-            'qualification': forms.TextInput(attrs={'class': 'form-control'}),
+            'qualification': forms.TextInput(attrs={'class': 'form-control', 'required': True}),
             'experience_years': forms.NumberInput(attrs={'class': 'form-control', 'min': 0}),
-            'license_number': forms.TextInput(attrs={'class': 'form-control'}),
-            'department': forms.TextInput(attrs={'class': 'form-control'}),
+            'license_number': forms.TextInput(attrs={'class': 'form-control', 'required': True}),
+            'department': forms.Select(attrs={'class': 'form-control'}),
             'bio': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
         }
     
@@ -114,14 +102,14 @@ class AddDoctorForm(forms.ModelForm):
         self.fields['first_name'].label = 'First Name'
         self.fields['last_name'].label = 'Last Name'
         self.fields['email'].label = 'Email'
-        self.fields['date_of_birth'].label = 'Date of Birth'
         self.fields['phone'].label = 'Phone'
         self.fields['address'].label = 'Address'
         self.fields['qualification'].label = 'Qualification'
-        self.fields['experience_years'].label = 'Experience Years'
+        self.fields['experience_years'].label = 'Experience (Years)'
         self.fields['license_number'].label = 'License Number'
         self.fields['department'].label = 'Department'
-        self.fields['bio'].label = 'Bio'
+        self.fields['bio'].label = 'Biography'
+        self.fields['time_slots'].label = 'Slots'
         
         # Make required fields
         self.fields['first_name'].required = True
@@ -140,6 +128,18 @@ class AddDoctorForm(forms.ModelForm):
         if User.objects.filter(email=email).exists():
             raise forms.ValidationError('Email already exists.')
         return email
+    
+    def clean_time_slots(self):
+        time_slots = self.cleaned_data.get('time_slots', '')
+        if time_slots:
+            slots = [s.strip() for s in time_slots.split(',') if s.strip()]
+            for slot in slots:
+                try:
+                    from datetime import datetime
+                    datetime.strptime(slot, '%H:%M')
+                except ValueError:
+                    raise forms.ValidationError(f'Invalid time format: "{slot}". Use HH:MM format e.g. 09:00')
+        return time_slots
     
     def clean(self):
         cleaned_data = super().clean()
@@ -165,39 +165,44 @@ class AddDoctorForm(forms.ModelForm):
         # Create doctor profile
         doctor = super().save(commit=False)
         doctor.user = user
+        
+        # Store available_days as list in JSONField
+        doctor.available_days = self.cleaned_data.get('available_days', [])
+        
+        # Store time_slots as comma-separated string
+        doctor.time_slots = self.cleaned_data.get('time_slots', '')
+        
         if commit:
             doctor.save()
             
-            # Create availability based on available days and time slots
+            # Create DoctorAvailability entries for next 30 days
             available_days = self.cleaned_data.get('available_days', [])
-            start_time = self.cleaned_data.get('start_time')
-            end_time = self.cleaned_data.get('end_time')
+            time_slots_str = self.cleaned_data.get('time_slots', '')
             
-            if available_days and start_time and end_time:
-                # Create availability for next 30 days with 30-minute slots
+            if available_days and time_slots_str:
                 from datetime import datetime, timedelta
                 today = timezone.now().date()
+                slots = [s.strip() for s in time_slots_str.split(',') if s.strip()]
                 
                 for i in range(30):
                     date = today + timedelta(days=i)
                     day_name = date.strftime('%A').lower()
                     
                     if day_name in available_days:
-                        # Generate slots from start_time to end_time with 30-minute intervals
-                        current_time = datetime.combine(date, start_time)
-                        end_datetime = datetime.combine(date, end_time)
-                        
-                        while current_time < end_datetime:
-                            next_time = current_time + timedelta(minutes=30)
-                            if next_time <= end_datetime:
+                        for slot in slots:
+                            try:
+                                time_obj = datetime.strptime(slot, '%H:%M').time()
+                                end_time = (datetime.combine(date, time_obj) + timedelta(minutes=30)).time()
+                                
                                 DoctorAvailability.objects.create(
                                     doctor=doctor,
                                     date=date,
-                                    start_time=current_time.time(),
-                                    end_time=next_time.time(),
+                                    start_time=time_obj,
+                                    end_time=end_time,
                                     is_available=True
                                 )
-                            current_time = next_time
+                            except ValueError:
+                                continue
         
         return doctor
 

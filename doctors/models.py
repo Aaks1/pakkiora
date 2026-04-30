@@ -7,29 +7,19 @@ from datetime import datetime, timedelta
 
 class Doctor(models.Model):
     """Doctor profile - passive entity, not a user"""
-    GENDER_CHOICES = [
-        ('M', 'Male'),
-        ('F', 'Female'),
-        ('O', 'Other'),
-    ]
-    
-    BLOOD_GROUP_CHOICES = [
-        ('A+', 'A+'),
-        ('A-', 'A-'),
-        ('B+', 'B+'),
-        ('B-', 'B-'),
-        ('AB+', 'AB+'),
-        ('AB-', 'AB-'),
-        ('O+', 'O+'),
-        ('O-', 'O-'),
+    DAY_CHOICES = [
+        ('monday', 'Monday'),
+        ('tuesday', 'Tuesday'),
+        ('wednesday', 'Wednesday'),
+        ('thursday', 'Thursday'),
+        ('friday', 'Friday'),
+        ('saturday', 'Saturday'),
+        ('sunday', 'Sunday'),
     ]
     
     # Personal Information
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
-    date_of_birth = models.DateField(blank=True, null=True)
-    gender = models.CharField(max_length=1, choices=GENDER_CHOICES, blank=True, null=True)
-    blood_group = models.CharField(max_length=3, choices=BLOOD_GROUP_CHOICES, blank=True, null=True)
         
     # Contact Information
     email = models.EmailField(validators=[EmailValidator()])
@@ -46,6 +36,10 @@ class Doctor(models.Model):
     license_number = models.CharField(max_length=50)
     department = models.CharField(max_length=200, blank=True, null=True)
     bio = models.TextField(blank=True, null=True)
+    
+    # Schedule Information
+    available_days = models.JSONField(default=list, blank=True, help_text="List of available days e.g. ['monday','wednesday']")
+    time_slots = models.CharField(max_length=500, blank=True, default='', help_text="Comma-separated time slots in 24-hour format e.g. 09:00,10:30,14:00")
     
         
     # Status
