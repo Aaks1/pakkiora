@@ -678,7 +678,7 @@ def doctor_calendar(request, doctor_id):
                     ).delete()
             
             safe_message(request, 'success', f'Updated availability for {len(selected_dates)} dates')
-            return redirect('admin:doctor_calendar', doctor_id=doctor_id)
+            return redirect('doctor_calendar', doctor_id=doctor_id)
     
     context = {
         'doctor': doctor,
