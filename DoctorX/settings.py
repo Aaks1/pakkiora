@@ -31,7 +31,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-h%w_r)+r4_dp4$20+^cu=70k$miegazaf44dwr*t2_hfsk3m+q')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG', 'True') == 'True'
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'testserver', 'pakkiora.vercel.app', '.vercel.app', '*.vercel.app', 'pakkiora-hcg6learg-aaks1s-projects.vercel.app', 'pakkiora-9cc2ppjus-aaks1s-projects.vercel.app', '*-aaks1s-projects.vercel.app']
 
