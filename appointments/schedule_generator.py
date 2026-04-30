@@ -125,15 +125,18 @@ class ScheduleGeneratorService:
             slot_start_utc = ScheduleGeneratorService._convert_to_utc(slot_start)
             slot_end_utc = ScheduleGeneratorService._convert_to_utc(slot_end)
             
-            # Create slot object
-            slot = DoctorTimeSlot(
+            # Create slot object with get_or_create to prevent duplicates
+            slot, created = DoctorTimeSlot.objects.get_or_create(
                 doctor=doctor,
                 date=target_date,
                 start_datetime=slot_start_utc,
-                end_datetime=slot_end_utc,
-                status='available'
+                defaults={
+                    'end_datetime': slot_end_utc,
+                    'status': 'available'
+                }
             )
-            slots.append(slot)
+            if created:
+                slots.append(slot)
             
             current += slot_duration
         

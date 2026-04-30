@@ -108,6 +108,10 @@ class DoctorTimeSlot(models.Model):
         ordering = ['date', 'start_datetime']
         verbose_name = 'Doctor Time Slot'
         verbose_name_plural = 'Doctor Time Slots'
+        indexes = [
+            models.Index(fields=["doctor", "date", "status"]),
+            models.Index(fields=["doctor", "date", "start_datetime"]),
+        ]
     
     def __str__(self):
         local_start = self.start_datetime.astimezone(timezone.get_current_timezone())

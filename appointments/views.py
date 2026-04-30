@@ -188,10 +188,18 @@ def book_appointment(request, doctor_id, date, start_time):
         if form.is_valid():
             try:
                 with transaction.atomic():
-                    if not ScheduleGeneratorService.book_slot(slot.id):
-                        messages.error(request, "Slot already booked.")
+                    # Use select_for_update to prevent race conditions
+                    slot = DoctorTimeSlot.objects.select_for_update().get(id=slot.id)
+                    
+                    if slot.status != 'available':
+                        messages.error(request, "This time slot is already booked. Please choose another time.")
                         return redirect('patient:doctor_detail', doctor_id=doctor_id)
 
+                    # Mark slot as booked
+                    slot.status = 'booked'
+                    slot.save(update_fields=['status'])
+
+                    # Create appointment
                     Appointment.objects.create(
                         patient=request.user,
                         doctor=doctor,
@@ -208,8 +216,11 @@ def book_appointment(request, doctor_id, date, start_time):
                     messages.success(request, "Appointment booked successfully!")
                     return redirect('patient:dashboard')
 
-            except Exception:
-                messages.error(request, "Booking failed.")
+            except DoctorTimeSlot.DoesNotExist:
+                messages.error(request, "Slot not found. Please choose another time.")
+                return redirect('patient:doctor_detail', doctor_id=doctor_id)
+            except Exception as e:
+                messages.error(request, "An error occurred while booking. Please try again.")
                 return redirect('patient:doctor_detail', doctor_id=doctor_id)
 
     form = BookAppointmentForm()
@@ -259,15 +270,23 @@ def cancel_appointment(request, appointment_id):
 
     if request.method == "POST":
         with transaction.atomic():
+            # Mark appointment as cancelled
             appointment.status = "CANCELLED"
             appointment.save()
 
-            DoctorTimeSlot.objects.filter(
-                doctor=appointment.doctor,
-                date=appointment.date,
-                start_datetime__time=appointment.start_time,
-                status='booked'
-            ).update(status='available')
+            # Find and free up the slot using select_for_update
+            try:
+                slot = DoctorTimeSlot.objects.select_for_update().get(
+                    doctor=appointment.doctor,
+                    date=appointment.date,
+                    start_datetime__time=appointment.start_time,
+                    status='booked'
+                )
+                slot.status = 'available'
+                slot.save(update_fields=['status'])
+            except DoctorTimeSlot.DoesNotExist:
+                # Slot might not exist, continue anyway
+                pass
 
         messages.success(request, "Appointment cancelled successfully.")
         return redirect('patient:dashboard')
