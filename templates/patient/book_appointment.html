@@ -289,8 +289,7 @@
         
         <div class="doctor-grid">
             {% for doctor in available_doctors %}
-                <div class="doctor-card {% if selected_doctor_id == doctor.id|stringformat:"s" %}selected{% endif %}"
-                     onclick="selectDoctor({{ doctor.id }})">
+                <div class="doctor-card {% if selected_doctor_id == doctor.id|stringformat:"s" %}selected{% endif %}">
                     <div class="doctor-header">
                         <div class="doctor-avatar">
                             {{ doctor.first_name.0 }}{{ doctor.last_name.0 }}
@@ -310,6 +309,14 @@
                             30 min slots (Default)
                         </p>
                     </div>
+                    <div class="mt-4">
+                        <form method="get" class="mb-0">
+                            <input type="hidden" name="doctor" value="{{ doctor.id }}">
+                            <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                                <i class="fas fa-arrow-right mr-2"></i>Select Doctor
+                            </button>
+                        </form>
+                    </div>
                 </div>
             {% endfor %}
         </div>
@@ -326,11 +333,19 @@
         <div class="date-grid">
             {% for date, doctors in available_dates.items %}
                 {% if doctors %}
-                    <div class="date-card {% if selected_date_str == date|date:'Y-m-d' %}selected{% endif %}"
-                         onclick="selectDate('{{ date|date:'Y-m-d' }}')">
+                    <div class="date-card {% if selected_date_str == date|date:'Y-m-d' %}selected{% endif %}">
                         <div class="date-day">{{ date|date:'D' }}</div>
                         <div class="date-number">{{ date.day }}</div>
                         <div class="date-doctors">{{ doctors|length }} doctors</div>
+                        <div class="mt-2">
+                            <form method="get" class="mb-0">
+                                <input type="hidden" name="doctor" value="{{ selected_doctor_id }}">
+                                <input type="hidden" name="date" value="{{ date|date:'Y-m-d' }}">
+                                <button type="submit" class="w-full bg-green-600 text-white py-1 rounded hover:bg-green-700 transition-colors text-sm">
+                                    <i class="fas fa-check mr-1"></i>Select Date
+                                </button>
+                            </form>
+                        </div>
                     </div>
                 {% endif %}
             {% endfor %}
@@ -349,9 +364,17 @@
         {% if available_slots %}
             <div class="slots-grid">
                 {% for slot in available_slots %}
-                    <div class="slot-card" onclick="selectSlot('{{ slot.start_time|date:'H:i' }}')">
-                        <div class="slot-time">{{ slot.start_str }}</div>
-                        <div class="slot-duration">{{ slot.start_str }} - {{ slot.end_str }}</div>
+                    <div class="slot-card">
+                        <form method="post" class="mb-0">
+                            {% csrf_token %}
+                            <input type="hidden" name="doctor" value="{{ selected_doctor_id }}">
+                            <input type="hidden" name="date" value="{{ selected_date_str }}">
+                            <input type="hidden" name="time" value="{{ slot.start_time|date:'H:i' }}">
+                            <button type="submit" class="w-full text-left p-3 hover:bg-blue-50 transition-colors">
+                                <div class="slot-time">{{ slot.start_str }}</div>
+                                <div class="slot-duration">{{ slot.start_str }} - {{ slot.end_str }}</div>
+                            </button>
+                        </form>
                     </div>
                 {% endfor %}
             </div>
@@ -366,88 +389,6 @@
     </div>
     {% endif %}
 
-    <!-- Booking Summary -->
-    {% if selected_doctor_id and selected_date_str %}
-    <div class="summary-card">
-        <h3 class="text-xl font-semibold mb-4">Appointment Summary</h3>
-        
-        <div class="summary-item">
-            <span class="summary-label">Doctor:</span>
-            <span class="summary-value">
-                {% for doctor in available_doctors %}
-                    {% if doctor.id == selected_doctor_id|int %}
-                        Dr. {{ doctor.first_name }} {{ doctor.last_name }}
-                    {% endif %}
-                {% endfor %}
-            </span>
-        </div>
-        
-        <div class="summary-item">
-            <span class="summary-label">Date:</span>
-            <span class="summary-value">{{ selected_date_str|date:'F d, Y' }}</span>
-        </div>
-        
-        <div class="summary-item">
-            <span class="summary-label">Time:</span>
-            <span class="summary-value" id="selected-time-display">Not selected</span>
-        </div>
-        
-        <div class="summary-item">
-            <span class="summary-label">Duration:</span>
-            <span class="summary-value">30 minutes (Default)</span>
-        </div>
     </div>
-    
-    <!-- Booking Form -->
-    <form method="post" id="booking-form">
-        {% csrf_token %}
-        <input type="hidden" name="doctor" value="{{ selected_doctor_id }}">
-        <input type="hidden" name="date" value="{{ selected_date_str }}">
-        <input type="hidden" name="time" id="selected-time" value="">
-        
-        <div class="flex gap-4 justify-center">
-            <button type="submit" class="btn-primary" id="book-button" disabled>
-                <i class="fas fa-calendar-check mr-2"></i>Book Appointment
-            </button>
-            <a href="{% url 'patient:dashboard' %}" class="btn-secondary">
-                <i class="fas fa-arrow-left mr-2"></i>Back to Dashboard
-            </a>
-        </div>
-    </form>
-    {% endif %}
-</div>
 
-<script>
-function selectDoctor(doctorId) {
-    // Redirect to update doctor selection
-    window.location.href = `?doctor=${doctorId}`;
-}
-
-function selectDate(dateStr) {
-    // Redirect to update date selection
-    const doctorId = '{{ selected_doctor_id }}';
-    window.location.href = `?doctor=${doctorId}&date=${dateStr}`;
-}
-
-function selectSlot(timeStr) {
-    // Update slot selection
-    document.querySelectorAll('.slot-card').forEach(card => {
-        card.classList.remove('selected');
-    });
-    
-    event.target.closest('.slot-card').classList.add('selected');
-    
-    // Update hidden input and display
-    document.getElementById('selected-time').value = timeStr;
-    document.getElementById('selected-time-display').textContent = timeStr;
-    
-    // Enable booking button
-    document.getElementById('book-button').disabled = false;
-}
-
-// Initialize selected time display
-{% if selected_doctor_id and selected_date_str %}
-    document.getElementById('selected-time-display').textContent = 'Not selected';
-{% endif %}
-</script>
 {% endblock %}

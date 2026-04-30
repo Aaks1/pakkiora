@@ -385,7 +385,7 @@ def book_appointment(request):
                 )
                 
                 messages.success(request, f'Appointment booked successfully with Dr. {doctor.first_name} {doctor.last_name} on {appointment_date.strftime("%B %d, %Y")} at {selected_time}')
-                return redirect('patient:dashboard')
+                return redirect('patient:doctors')
     
     # Handle doctor and date selection for slot generation
     selected_doctor_id = request.GET.get('doctor')
