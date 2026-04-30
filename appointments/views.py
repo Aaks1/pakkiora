@@ -106,6 +106,17 @@ def doctor_detail(request, doctor_id):
     # Generate schedule for next 3 weeks using new service
     available_slots = service.generate_schedule_for_next_3_weeks(doctor)
     
+    # Add error handling for doctors without published schedules
+    if not available_slots:
+        # Doctor has no weekly schedules set up
+        context = {
+            'doctor': doctor,
+            'error_message': 'This doctor has not published their weekly schedule yet. Please contact the administrator to set up their availability.',
+            'available_slots': [],
+            'today': timezone.now().date(),
+        }
+        return render(request, 'patient/doctors/doctor_profile_final.html', context)
+    
     context = {
         'doctor': doctor,
         'available_slots': available_slots,
