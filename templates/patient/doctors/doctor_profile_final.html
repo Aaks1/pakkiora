@@ -165,7 +165,7 @@
                     Available Time Slots for {{ request.GET.date|date:"F j, Y" }}
                 </h3>
                 
-                {% if selected_date_slots %}
+                {% if selected_date_slots %}Q
                     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                         {% for slot in selected_date_slots %}
                             <a href="{% url 'patient:book_appointment' doctor.id request.GET.date slot.local_start_time|time:'H:i' %}" 
@@ -193,6 +193,8 @@
                         <p class="text-sm text-gray-400 mt-2">All slots may be booked or the doctor may not be available on this date.</p>
                     </div>
                 {% endif %}
+            </div>
+        {% endif %}
     </main>
 </body>
 </html>
