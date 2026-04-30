@@ -61,7 +61,7 @@ def login_view(request):
                 try:
                     patient = Patient.objects.select_related('user').get(user=user)
                     safe_message(request, 'success', f'Welcome back, {patient.first_name}!')
-                    return redirect('accounts:patient_dashboard')
+                    return redirect('patient:dashboard')
                 except Patient.DoesNotExist:
                     # Regular user without patient profile
                     safe_message(request, 'error', 'No patient profile found. Please complete your registration.')

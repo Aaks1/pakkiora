@@ -254,7 +254,7 @@ def book_appointment(request, doctor_id, date, start_time):
                     
                     # Success - appointment booked
                     messages.success(request, f'Appointment booked successfully with Dr. {doctor.first_name} {doctor.last_name}!')
-                    return redirect('accounts:patient_dashboard')
+                    return redirect('patient:dashboard')
                     
             except IntegrityError:
                 # Database constraint violation - slot already booked
