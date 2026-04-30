@@ -144,34 +144,6 @@ class AdminUserForm(forms.ModelForm):
         return user
 
 
-class DoctorForm(forms.ModelForm):
-    """Form for creating and editing doctors"""
-    username = forms.CharField(max_length=150)
-    first_name = forms.CharField(max_length=30)
-    last_name = forms.CharField(max_length=30)
-    email = forms.EmailField()
-    password = forms.CharField(widget=forms.PasswordInput(), required=True, help_text="Password must be at least 8 characters")
-    confirm_password = forms.CharField(widget=forms.PasswordInput(), required=True)
-    
-    # Additional fields
-    date_of_birth = forms.DateField(required=True, widget=forms.DateInput(attrs={'type': 'date'}))
-    gender = forms.ChoiceField(choices=[('M', 'Male'), ('F', 'Female'), ('O', 'Other')], required=True)
-    blood_group = forms.ChoiceField(choices=[
-        ('', 'Select Blood Group'),
-        ('A+', 'A+'), ('A-', 'A-'), ('B+', 'B+'), ('B-', 'B-'),
-        ('AB+', 'AB+'), ('AB-', 'AB-'), ('O+', 'O+'), ('O-', 'O-')
-    ], required=False)
-    profile_photo = forms.ImageField(required=False)
-    address = forms.CharField(widget=forms.Textarea, required=True)
-    license_number = forms.CharField(max_length=50, required=True)
-    department = forms.CharField(max_length=100, required=False)
-    bio = forms.CharField(widget=forms.Textarea, required=False)
-    
-    class Meta:
-        model = Doctor
-        fields = ['specialization', 'qualification', 'experience_years', 'consultation_fee', 
-                 'phone', 'email', 'address', 'is_active', 'date_of_birth', 'gender', 
-                 'blood_group', 'profile_photo', 'license_number', 'department', 'bio']
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

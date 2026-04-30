@@ -382,20 +382,20 @@ def doctor_list(request):
 def doctor_create(request):
     """Create new doctor"""
     if request.method == 'POST':
-        form = DoctorForm(request.POST)
+        form = AddDoctorForm(request.POST)
         if form.is_valid():
-            # Create doctor profile without user account
+            # Create doctor profile with user account
             doctor = form.save()
             
             safe_message(request, 'success', f'Dr. {doctor.first_name} {doctor.last_name} created successfully!')
-            return redirect('admin_dashboard')
+            return redirect('admin:doctor_list')
         else:
             # Form is not valid, show errors
             for field, errors in form.errors.items():
                 for error in errors:
                     safe_message(request, 'error', f'{field}: {error}')
     else:
-        form = DoctorForm()
+        form = AddDoctorForm()
     
     return render(request, 'admin/doctor_create.html', {'form': form, 'user': request.user})
 
@@ -406,13 +406,13 @@ def doctor_edit(request, doctor_id):
     doctor = get_object_or_404(Doctor, id=doctor_id)
     
     if request.method == 'POST':
-        form = DoctorForm(request.POST, instance=doctor)
+        form = AddDoctorForm(request.POST, instance=doctor)
         if form.is_valid():
             form.save()
             safe_message(request, 'success', f'Dr. {doctor.first_name} {doctor.last_name} updated successfully!')
-            return redirect('doctor_list')
+            return redirect('admin:doctor_list')
     else:
-        form = DoctorForm(instance=doctor)
+        form = AddDoctorForm(instance=doctor)
     
     return render(request, 'admin/doctor_edit.html', {'form': form, 'doctor': doctor, 'user': request.user})
 
