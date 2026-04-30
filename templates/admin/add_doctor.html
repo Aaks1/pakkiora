@@ -3,11 +3,11 @@
 
 {% block title %}Add Doctor - Piki Ora Healthcare{% endblock %}
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/admin_add_doctor.css' %}">
+<link rel="stylesheet" href="{% static 'css/admin/forms.css' %}">
 {% endblock %}
 
 {% block content %}
-<div class="container mx-auto px-4 py-8">
+<div class="container mx-auto px-4 py-8 admin-form-page">
     <!-- Page Header -->
     <div class="mb-8">
         <div class="flex items-center justify-between">
@@ -24,8 +24,8 @@
     </div>
 
     <!-- Add Doctor Form -->
-    <div class="bg-white rounded-lg shadow-md p-6">
-        <form method="post" id="add-doctor-form">
+    <div class="bg-white rounded-lg shadow-md p-6 admin-form-shell">
+        <form method="post" id="add-doctor-form" class="admin-form">
             {% csrf_token %}
             
             <!-- Account Details Section -->

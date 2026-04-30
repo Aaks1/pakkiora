@@ -1,12 +1,165 @@
-{% extends 'admin/base.html' %}
-{% block title %}Admin Dashboard{% endblock %}
-{% block content %}
-<div class="mb-8">
-    <h1 class="text-2xl font-bold text-gray-900">Dashboard Overview</h1>
-    <p class="text-gray-600 mt-1">Monitor and manage your healthcare system</p>
-</div>
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Piki Ora (Updated)</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{% static 'css/admin_style.css' %}">
+</head>
+<body class="bg-gray-50">
 
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+<!-- Top Header -->
+<header class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
+    <div class="px-6 py-4">
+        <div class="flex items-center justify-between">
+            <!-- Logo and Page Title -->
+            <div class="flex items-center space-x-4">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-user-md text-white text-lg"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold text-gray-900">Piki Ora</h1>
+                        <p class="text-sm text-gray-500">Healthcare Management System</p>
+                    </div>
+                </div>
+                <div class="h-8 w-px bg-gray-300"></div>
+                <div>
+                    <h2 class="text-lg font-semibold text-gray-700">Dashboard</h2>
+                    <p class="text-sm text-gray-500">Admin Overview</p>
+                </div>
+            </div>
+            
+            <!-- User Info -->
+            <div class="flex items-center space-x-4">
+                <div class="text-right">
+                    <p class="font-semibold text-gray-900">{{ user.get_full_name|default:user.username }}</p>
+                    <p class="text-sm text-gray-500">Administrator</p>
+                </div>
+                <div class="w-10 h-10 bg-blue-600 text-white flex items-center justify-center rounded-full font-semibold">
+                    {{ user.first_name.0|default:user.username.0|upper }}
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<div class="flex min-h-screen">
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-white shadow-lg">
+        <div class="p-6 border-b">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-user-md text-white"></i>
+                </div>
+                <div>
+                    <h2 class="text-xl font-bold text-gray-900">DoctorX</h2>
+                    <p class="text-sm text-gray-500">Admin Panel</p>
+                </div>
+            </div>
+        </div>
+
+        <nav class="p-4 space-y-6">
+            <!-- Dashboard -->
+            <div>
+                <h3 class="text-xs uppercase text-gray-400 mb-3 font-semibold">Dashboard</h3>
+                <a href="{% url 'admin_dashboard' %}" class="nav-link active flex items-center space-x-3">
+                    <i class="fas fa-tachometer-alt w-4"></i>
+                    <span>Dashboard</span>
+                </a>
+            </div>
+
+            <!-- Admin Management -->
+            <div>
+                <h3 class="text-xs uppercase text-gray-400 mb-3 font-semibold">Admin Management</h3>
+                <a href="{% url 'admin_list' %}" class="nav-link flex items-center space-x-3">
+                    <i class="fas fa-users w-4"></i>
+                    <span>Admin Users</span>
+                </a>
+                <a href="{% url 'admin_create' %}" class="nav-link flex items-center space-x-3">
+                    <i class="fas fa-user-plus w-4"></i>
+                    <span>Create Admin</span>
+                </a>
+            </div>
+
+            <!-- Doctor Management -->
+            <div>
+                <h3 class="text-xs uppercase text-gray-400 mb-3 font-semibold">Doctor Management</h3>
+                <a href="{% url 'doctor_list' %}" class="nav-link flex items-center space-x-3">
+                    <i class="fas fa-stethoscope w-4"></i>
+                    <span>Doctors List</span>
+                </a>
+                <a href="{% url 'doctor_create' %}" class="nav-link flex items-center space-x-3">
+                    <i class="fas fa-user-md w-4"></i>
+                    <span>Add Doctor</span>
+                </a>
+            </div>
+
+            <!-- Appointment Management -->
+            <div>
+                <h3 class="text-xs uppercase text-gray-400 mb-3 font-semibold">Appointment Management</h3>
+                <a href="{% url 'admin_appointment_management' %}" class="nav-link flex items-center space-x-3">
+                    <i class="fas fa-calendar-check w-4"></i>
+                    <span>All Appointments</span>
+                </a>
+            </div>
+
+            <!-- User Management -->
+            <div>
+                <h3 class="text-xs uppercase text-gray-400 mb-3 font-semibold">User Management</h3>
+                <a href="{% url 'user_management' %}" class="nav-link flex items-center space-x-3">
+                    <i class="fas fa-users w-4"></i>
+                    <span>Users List</span>
+                </a>
+            </div>
+
+            <!-- System -->
+            <div>
+                <h3 class="text-xs uppercase text-gray-400 mb-3 font-semibold">System</h3>
+                <a href="#" class="nav-link flex items-center space-x-3">
+                    <i class="fas fa-cog w-4"></i>
+                    <span>Settings</span>
+                </a>
+                <form method="post" action="{% url 'accounts:logout' %}" class="mt-2">
+                    {% csrf_token %}
+                    <button type="submit" class="nav-link text-left w-full flex items-center space-x-3 text-red-600 hover:bg-red-50">
+                        <i class="fas fa-sign-out-alt w-4"></i>
+                        <span>Logout</span>
+                    </button>
+                </form>
+            </div>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 p-6">
+        <!-- Page Content -->
+        <div class="mb-8">
+            <h1 class="text-2xl font-bold text-gray-900">Dashboard Overview</h1>
+            <p class="text-gray-600 mt-1">Monitor and manage your healthcare system</p>
+        </div>
+
+        <!-- Messages -->
+        {% if messages %}
+            {% for message in messages %}
+                <div class="mb-6 p-4 rounded-lg {% if message.tags == 'error' %}bg-red-50 border border-red-200 text-red-800{% elif message.tags == 'success' %}bg-green-50 border border-green-200 text-green-800{% else %}bg-blue-50 border border-blue-200 text-blue-800{% endif %}">
+                    <div class="flex items-center">
+                        <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle text-red-500{% elif message.tags == 'success' %}fa-check-circle text-green-500{% else %}fa-info-circle text-blue-500{% endif %} mr-2"></i>
+                        {{ message }}
+                    </div>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <!-- Statistics Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
                 <div class="flex items-center justify-between">
                     <div>
@@ -59,7 +212,7 @@
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm font-medium text-gray-600">Today's Appointments</p>
-                        <p class="text-2xl font-bold text-gray-900 mt-2">{{ todays_appointments }}</p>
+                        <p class="text-2xl font-bold text-gray-900 mt-2">0</p>
                         <p class="text-sm text-gray-600 mt-2">
                             <i class="fas fa-minus mr-1"></i>
                             Scheduled
@@ -72,7 +225,8 @@
             </div>
         </div>
 
-<div class="mb-8">
+        <!-- Quick Actions -->
+        <div class="mb-8">
             <h2 class="text-xl font-bold text-gray-900 mb-4">Quick Actions</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <a href="{% url 'admin_create' %}" class="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow group block">
@@ -109,7 +263,9 @@
             </div>
         </div>
 
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Recent Activity -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Recent Users -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-200">
                 <div class="px-6 py-4 border-b border-gray-200">
                     <h3 class="text-lg font-semibold text-gray-900">Recent Patients</h3>
@@ -139,6 +295,7 @@
                 </div>
             </div>
 
+            <!-- Recent Doctors -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-200">
                 <div class="px-6 py-4 border-b border-gray-200">
                     <h3 class="text-lg font-semibold text-gray-900">Recent Doctors</h3>
@@ -149,10 +306,10 @@
                         <div class="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
                             <div class="flex items-center space-x-3">
                                 <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                                    <span class="text-xs font-medium text-green-600">{{ doctor.first_name.0|upper }}</span>
+                                    <span class="text-xs font-medium text-green-600">{{ doctor.user.first_name.0|upper }}</span>
                                 </div>
                                 <div>
-                                    <p class="text-sm font-medium text-gray-900">Dr. {{ doctor.first_name }} {{ doctor.last_name }}</p>
+                                    <p class="text-sm font-medium text-gray-900">Dr. {{ doctor.user.first_name }} {{ doctor.user.last_name }}</p>
                                     <p class="text-xs text-gray-500">{{ doctor.specialization }}</p>
                                 </div>
                             </div>
@@ -168,4 +325,8 @@
                 </div>
             </div>
         </div>
-{% endblock %}
+    </main>
+</div>
+
+</body>
+</html>

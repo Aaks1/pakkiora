@@ -1,0 +1,95 @@
+.admin-form-page {
+    --form-primary: #2563eb;
+    --form-primary-soft: #eff6ff;
+    --form-border: #dbe3ef;
+    --form-text: #0f172a;
+    --form-muted: #64748b;
+}
+
+.admin-form-shell {
+    border: 1px solid var(--form-border) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 16px 32px rgba(15, 23, 42, 0.08) !important;
+}
+
+.admin-form h2,
+.admin-form h3,
+.admin-form label {
+    color: var(--form-text);
+}
+
+.admin-form label {
+    font-weight: 600;
+    letter-spacing: 0.01em;
+}
+
+.admin-form input[type="text"],
+.admin-form input[type="email"],
+.admin-form input[type="password"],
+.admin-form input[type="tel"],
+.admin-form input[type="number"],
+.admin-form input[type="date"],
+.admin-form select,
+.admin-form textarea {
+    width: 100%;
+    border: 1px solid var(--form-border) !important;
+    border-radius: 10px !important;
+    background: #ffffff;
+    color: var(--form-text);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.admin-form input:focus,
+.admin-form select:focus,
+.admin-form textarea:focus {
+    outline: none;
+    border-color: var(--form-primary) !important;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+}
+
+.admin-form .form-field {
+    position: relative;
+}
+
+.admin-form .form-field::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -2px;
+    height: 2px;
+    background: linear-gradient(90deg, rgba(37, 99, 235, 0.55), rgba(16, 185, 129, 0.55));
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.25s ease;
+}
+
+.admin-form .form-field:focus-within::after {
+    transform: scaleX(1);
+}
+
+.admin-form .border-b {
+    border-color: #e2e8f0 !important;
+}
+
+.admin-form .bg-gray-50 {
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0;
+}
+
+.admin-form button[type="submit"] {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+    border: none;
+    box-shadow: 0 10px 20px rgba(37, 99, 235, 0.25);
+}
+
+.admin-form button[type="submit"]:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 14px 24px rgba(37, 99, 235, 0.3);
+}
+
+.admin-form a[href*="doctor"],
+.admin-form a[href*="admin_dashboard"],
+.admin-form a[href*="admin_list"] {
+    font-weight: 600;
+}
