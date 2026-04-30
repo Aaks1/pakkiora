@@ -466,7 +466,24 @@ def doctor_schedule_create(request, doctor_id):
             schedule = form.save(commit=False)
             schedule.doctor = doctor
             schedule.save()
-            safe_message(request, 'success', f'Schedule created for Dr. {doctor.first_name} {doctor.last_name}!')
+            
+            # Generate slots for the next 30 days for this schedule
+            from appointments.schedule_generator import ScheduleGeneratorService
+            from datetime import date, timedelta
+            
+            schedule_service = ScheduleGeneratorService()
+            start_date = date.today()
+            end_date = start_date + timedelta(days=30)
+            
+            try:
+                stats = schedule_service.regenerate_slots_for_date_range(doctor, start_date, end_date)
+                safe_message(request, 'success', 
+                    f'Schedule created for Dr. {doctor.first_name} {doctor.last_name}! '
+                    f'Generated {stats["slots_generated"]} slots for the next 30 days.')
+            except Exception as e:
+                safe_message(request, 'warning', 
+                    f'Schedule created but slot generation failed: {str(e)}')
+            
             return redirect('doctor_schedule_list', doctor_id=doctor_id)
     else:
         form = DoctorScheduleForm(doctor=doctor)
@@ -489,7 +506,24 @@ def doctor_schedule_edit(request, doctor_id, schedule_id):
         form = DoctorScheduleForm(request.POST, instance=schedule, doctor=doctor)
         if form.is_valid():
             form.save()
-            safe_message(request, 'success', f'Schedule updated for Dr. {doctor.first_name} {doctor.last_name}!')
+            
+            # Regenerate slots for the next 30 days when schedule is updated
+            from appointments.schedule_generator import ScheduleGeneratorService
+            from datetime import date, timedelta
+            
+            schedule_service = ScheduleGeneratorService()
+            start_date = date.today()
+            end_date = start_date + timedelta(days=30)
+            
+            try:
+                stats = schedule_service.regenerate_slots_for_date_range(doctor, start_date, end_date)
+                safe_message(request, 'success', 
+                    f'Schedule updated for Dr. {doctor.first_name} {doctor.last_name}! '
+                    f'Regenerated {stats["slots_generated"]} slots for the next 30 days.')
+            except Exception as e:
+                safe_message(request, 'warning', 
+                    f'Schedule updated but slot regeneration failed: {str(e)}')
+            
             return redirect('doctor_schedule_list', doctor_id=doctor_id)
     else:
         form = DoctorScheduleForm(instance=schedule, doctor=doctor)

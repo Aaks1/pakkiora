@@ -4,10 +4,11 @@ from django.contrib import messages
 from django.utils import timezone
 from django.views.generic import ListView, DetailView
 from django.urls import reverse
-from django.db import models
-from doctors.models import Doctor, AppointmentSlot
+from django.db import models, transaction
+from doctors.models import Doctor, DoctorTimeSlot
 from .models import Appointment
 from .forms import AppointmentForm, BookAppointmentForm
+from .schedule_generator import ScheduleGeneratorService
 
 @login_required
 def patient_dashboard(request):
@@ -45,9 +46,9 @@ def patient_dashboard(request):
     # Get specializations efficiently
     specializations = list(set(doctor.specialization for doctor in doctors))
     
-    # Get available today count
-    from doctors.models import AppointmentSlot
-    available_today = AppointmentSlot.objects.filter(date=today, is_booked=False).count()
+    # Get available today count using new slot system
+    from doctors.models import DoctorTimeSlot
+    available_today = DoctorTimeSlot.objects.filter(date=today, status='available').count()
     
     # Simplified statistics
     total_appointments = len(all_appointments)
@@ -89,11 +90,13 @@ def doctor_list(request):
 
 @login_required
 def doctor_detail(request, doctor_id):
-    """View doctor details and available time slots"""
+    """View doctor details and available time slots using new slot system"""
     from doctors.models import Doctor
     from datetime import datetime, timedelta
+    from .schedule_generator import ScheduleGeneratorService
     
     doctor = get_object_or_404(Doctor, id=doctor_id, is_active=True)
+    schedule_service = ScheduleGeneratorService()
     
     # Generate available time slots for next 2 weeks
     available_slots = []
@@ -102,43 +105,38 @@ def doctor_detail(request, doctor_id):
     for day_offset in range(14):  # Next 14 days
         current_date = start_date + timedelta(days=day_offset)
         
-        # Skip weekends (optional - remove if you want weekends)
-        if current_date.weekday() >= 5:  # Saturday (5) and Sunday (6)
+        # Skip past dates
+        if current_date < start_date:
             continue
         
-        # Generate 30-minute slots from 9:00 AM to 5:00 PM
-        day_slots = []
-        for hour in range(9, 17):  # 9 AM to 5 PM
-            for minute in [0, 30]:  # :00 and :30
-                slot_time = datetime.strptime(f"{hour:02d}:{minute:02d}", "%H:%M").time()
-                
-                # Check if slot is already booked (exclude cancelled appointments)
-                is_booked = Appointment.objects.filter(
-                    doctor=doctor,
-                    date=current_date,
-                    start_time=slot_time,
-                    status__in=['BOOKED', 'COMPLETED', 'NO_SHOW']
-                ).exists()
-                
-                if not is_booked:
-                    # Calculate end time (30 minutes later)
-                    end_time = datetime.combine(current_date, datetime.min.time()) + timedelta(hours=slot_time.hour, minutes=slot_time.minute + 30)
-                    end_time_only = end_time.time()
-                    
+        # Get available slots for this date
+        try:
+            # Generate slots for this date if they don't exist
+            schedule_service.generate_daily_slots(doctor, current_date)
+            
+            # Get available slots
+            slots = ScheduleGeneratorService.get_available_slots_for_date(doctor, current_date)
+            
+            if slots:  # Only add days with available slots
+                day_slots = []
+                for slot in slots:
                     day_slots.append({
-                        'time': slot_time,
-                        'end_time': end_time_only,
+                        'time': slot.local_start_time,
+                        'end_time': slot.local_end_time,
                         'date': current_date,
-                        'booking_url': f"/patient/appointments/book/{doctor_id}/{current_date.strftime('%Y-%m-%d')}/{slot_time.strftime('%H:%M')}/"
+                        'slot_id': slot.id,
+                        'booking_url': f"/patient/appointments/book/{doctor_id}/{current_date.strftime('%Y-%m-%d')}/{slot.local_start_time.strftime('%H:%M')}/"
                     })
-        
-        if day_slots:  # Only add days with available slots
-            available_slots.append({
-                'date': current_date,
-                'day_name': current_date.strftime('%A'),
-                'day_name_short': current_date.strftime('%A')[:3],  # Add short day name
-                'slots': day_slots
-            })
+                
+                available_slots.append({
+                    'date': current_date,
+                    'day_name': current_date.strftime('%A'),
+                    'day_name_short': current_date.strftime('%A')[:3],
+                    'slots': day_slots
+                })
+        except ValueError:
+            # No schedule template for this day
+            continue
     
     context = {
         'doctor': doctor,
@@ -149,11 +147,12 @@ def doctor_detail(request, doctor_id):
 
 @login_required
 def book_appointment(request, doctor_id, date, start_time):
-    """Robust appointment booking with database integrity and concurrency handling"""
-    from doctors.models import Doctor
+    """Book appointment using new slot system with database integrity"""
+    from doctors.models import Doctor, DoctorTimeSlot
     from django.db import IntegrityError, transaction
     from django.utils import timezone
     from datetime import datetime, timedelta
+    from .schedule_generator import ScheduleGeneratorService
     
     try:
         doctor = Doctor.objects.get(id=doctor_id, is_active=True)
@@ -182,14 +181,22 @@ def book_appointment(request, doctor_id, date, start_time):
         messages.error(request, 'Cannot book appointments more than 3 months in advance.')
         return redirect('patient:doctor_detail', doctor_id=doctor_id)
     
-    # Validate business hours (9 AM - 5 PM, weekdays only)
-    if appointment_date.weekday() >= 5:  # Weekend (5=Saturday, 6=Sunday)
-        messages.error(request, 'Appointments are only available on weekdays.')
-        return redirect('patient:doctor_detail', doctor_id=doctor_id)
+    schedule_service = ScheduleGeneratorService()
     
-    if appointment_time < datetime.strptime('09:00', '%H:%M').time() or \
-       appointment_time > datetime.strptime('16:30', '%H:%M').time():
-        messages.error(request, 'Appointments are only available between 9:00 AM and 4:30 PM.')
+    # Find the specific slot
+    try:
+        # Generate slots for this date if they don't exist
+        schedule_service.generate_daily_slots(doctor, appointment_date)
+        
+        # Find the specific slot
+        slot = DoctorTimeSlot.objects.get(
+            doctor=doctor,
+            date=appointment_date,
+            start_datetime__time=appointment_time,
+            status='available'
+        )
+    except DoctorTimeSlot.DoesNotExist:
+        messages.error(request, 'This time slot is not available. Please choose another time.')
         return redirect('patient:doctor_detail', doctor_id=doctor_id)
     
     if request.method == 'POST':
@@ -198,20 +205,9 @@ def book_appointment(request, doctor_id, date, start_time):
             # Use database transaction for atomic operation
             try:
                 with transaction.atomic():
-                    # Quick conflict check with single query
-                    conflicts = Appointment.objects.select_for_update().filter(
-                        date=appointment_date,
-                        start_time=appointment_time,
-                        status='BOOKED'
-                    ).filter(
-                        models.Q(doctor=doctor) | models.Q(patient=request.user)
-                    ).first()
-                    
-                    if conflicts:
-                        if conflicts.doctor == doctor:
-                            messages.error(request, 'This time slot is already booked. Please choose another time.')
-                        else:
-                            messages.error(request, 'You already have an appointment at this time.')
+                    # Book the slot
+                    if not ScheduleGeneratorService.book_slot(slot.id):
+                        messages.error(request, 'This time slot is already booked. Please choose another time.')
                         return redirect('patient:doctor_detail', doctor_id=doctor_id)
                     
                     # Create the appointment
@@ -405,7 +401,10 @@ class AppointmentDetailView(DetailView):
 
 @login_required
 def cancel_appointment(request, appointment_id):
-    """Cancel an appointment"""
+    """Cancel an appointment and free up the slot"""
+    from doctors.models import DoctorTimeSlot
+    from .schedule_generator import ScheduleGeneratorService
+    
     appointment = get_object_or_404(
         Appointment, 
         id=appointment_id, 
@@ -414,15 +413,29 @@ def cancel_appointment(request, appointment_id):
     )
     
     if request.method == 'POST':
-        # Mark appointment as cancelled
-        appointment.status = 'CANCELLED'
-        appointment.save()
-        
-        # Free up the slot
-        appointment.slot.is_booked = False
-        appointment.slot.save()
-        
-        messages.success(request, 'Appointment cancelled successfully!')
-        return redirect('patient:appointments')
+        try:
+            with transaction.atomic():
+                # Mark appointment as cancelled
+                appointment.status = 'CANCELLED'
+                appointment.save()
+                
+                # Find and free up the slot
+                try:
+                    slot = DoctorTimeSlot.objects.get(
+                        doctor=appointment.doctor,
+                        date=appointment.date,
+                        start_datetime__time=appointment.start_time,
+                        status='booked'
+                    )
+                    slot.status = 'available'
+                    slot.save(update_fields=['status'])
+                except DoctorTimeSlot.DoesNotExist:
+                    # Slot might not exist, continue anyway
+                    pass
+                
+                messages.success(request, 'Appointment cancelled successfully!')
+                return redirect('patient:past_appointments')
+        except Exception as e:
+            messages.error(request, 'An error occurred while cancelling. Please try again.')
     
     return render(request, 'patient/appointments/cancel.html', {'appointment': appointment})
