@@ -13,7 +13,6 @@ from doctors.models import Doctor, Patient, DoctorAvailability
 from appointments.models import Appointment
 from .forms import UserRegistrationForm, AdminUserForm, AdminAppointmentForm, PatientAccountForm
 from doctors.forms import AddDoctorForm, DoctorUpdateForm
-from .default_admin import ensure_default_superuser, DEFAULT_ADMIN_USERNAME
 
 def safe_message(request, level, message):
     """Safe message handling for serverless environments"""
@@ -217,7 +216,6 @@ def admin_required(view_func):
 @admin_required
 def admin_dashboard(request):
     """Main admin dashboard - optimized for performance"""
-    ensure_default_superuser()
     # Use single query with aggregation for better performance
     from django.db.models import Count, Q
     
@@ -259,7 +257,6 @@ def admin_dashboard(request):
 @admin_required
 def admin_list(request):
     """List all admin users - optimized for performance"""
-    ensure_default_superuser()
     # Apply search filter first to reduce dataset
     search_query = request.GET.get('search')
     
@@ -283,15 +280,11 @@ def admin_list(request):
 @admin_required
 def admin_create(request):
     """Create new admin user"""
-    ensure_default_superuser()
     if request.method == 'POST':
         form = AdminUserForm(request.POST)
         if form.is_valid():
             try:
                 user = form.save(commit=False)
-                if user.username == DEFAULT_ADMIN_USERNAME:
-                    safe_message(request, 'error', f'Username "{DEFAULT_ADMIN_USERNAME}" is reserved for the Django superuser.')
-                    return render(request, 'admin/admin_create.html', {'form': form, 'user': request.user})
                 user.is_staff = True
                 user.is_superuser = False  # Regular admin, not superuser
                 user.save()
@@ -304,7 +297,7 @@ def admin_create(request):
                 )
                 
                 safe_message(request, 'success', f'Admin {user.username} created successfully!')
-                return redirect('admin_dashboard')
+                return redirect('admin_list')
             except Exception as e:
                 safe_message(request, 'error', f'Error creating admin: {str(e)}')
         else:
@@ -320,11 +313,7 @@ def admin_create(request):
 @admin_required
 def admin_edit(request, admin_id):
     """Edit admin user"""
-    ensure_default_superuser()
     admin = get_object_or_404(User, id=admin_id, is_staff=True)
-    if admin.username == DEFAULT_ADMIN_USERNAME and admin.is_superuser:
-        safe_message(request, 'warning', 'Default Django superuser is protected and cannot be edited here.')
-        return redirect('admin_list')
     
     if request.method == 'POST':
         form = AdminUserForm(request.POST, instance=admin)
@@ -361,12 +350,8 @@ def admin_edit(request, admin_id):
 @admin_required
 def admin_delete(request, admin_id):
     """Delete admin user"""
-    ensure_default_superuser()
     if request.method == 'POST':
         admin = get_object_or_404(User, id=admin_id, is_staff=True)
-        if admin.username == DEFAULT_ADMIN_USERNAME and admin.is_superuser:
-            safe_message(request, 'error', 'Default Django superuser cannot be deleted.')
-            return redirect('admin_list')
         
         # Prevent self-deletion
         if admin.id == request.user.id:

@@ -52,7 +52,7 @@
                 <a href="{% url 'doctor_list' %}" class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors {% if request.resolver_match.url_name == 'doctor_list' or request.resolver_match.url_name == 'doctor_edit' %}bg-blue-50 text-blue-700 font-semibold{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
                     <i class="fas fa-user-doctor w-4"></i><span>Doctors List</span>
                 </a>
-                <a href="{% url 'add_doctor' %}" class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors {% if request.resolver_match.url_name == 'add_doctor' %}bg-blue-50 text-blue-700 font-semibold{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
+                <a href="{% url 'doctor_create' %}" class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors {% if request.resolver_match.url_name == 'add_doctor' or request.resolver_match.url_name == 'doctor_create' %}bg-blue-50 text-blue-700 font-semibold{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
                     <i class="fas fa-plus w-4"></i><span>Add Doctor</span>
                 </a>
             </div>
