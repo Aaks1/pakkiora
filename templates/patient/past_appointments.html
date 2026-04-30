@@ -170,7 +170,21 @@
                                     </div>
                                 </div>
                                 <div class="flex items-center space-x-3 mt-4 lg:mt-0 lg:ml-4">
-                                    {% if appointment.status == 'COMPLETED' %}
+                                    {% if appointment.status == 'BOOKED' %}
+                                        <a href="{% url 'patient:edit_appointment' appointment.id %}"
+                                           class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                                            <i class="fas fa-pen-to-square mr-2"></i>
+                                            Edit Date/Time
+                                        </a>
+                                        <form method="post" action="{% url 'patient:cancel_appointment' appointment.id %}" class="inline">
+                                            {% csrf_token %}
+                                            <button type="submit"
+                                                    class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                                                <i class="fas fa-times mr-2"></i>
+                                                Cancel
+                                            </button>
+                                        </form>
+                                    {% elif appointment.status == 'COMPLETED' %}
                                         <a href="{% url 'patient:doctors' %}" 
                                            class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
                                             <i class="fas fa-calendar-plus mr-2"></i>

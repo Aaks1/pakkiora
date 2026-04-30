@@ -10,8 +10,8 @@
     <div class="bg-white rounded-xl border border-gray-200 p-6">
         <h1 class="text-xl font-bold text-gray-900 mb-4">Appointment Detail</h1>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-            <p><strong>Patient:</strong> {{ appointment.patient.username }}</p>
-            <p><strong>Doctor:</strong> Dr. {{ appointment.doctor.first_name }} {{ appointment.doctor.last_name }}</p>
+            <p><strong>Patient:</strong> {{ appointment.patient.get_full_name|default:appointment.patient.username|default:"Unknown patient" }}</p>
+            <p><strong>Doctor:</strong> {% if appointment.doctor %}Dr. {{ appointment.doctor.first_name }} {{ appointment.doctor.last_name }}{% else %}Unknown doctor{% endif %}</p>
             <p><strong>Date:</strong> {{ appointment.date }}</p>
             <p><strong>Start:</strong> {{ appointment.start_time }}</p>
             <p><strong>End:</strong> {{ appointment.end_time }}</p>

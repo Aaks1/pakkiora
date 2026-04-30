@@ -457,8 +457,8 @@ def appointment_management(request):
     if doctor_filter:
         appointments = appointments.filter(doctor_id=doctor_filter)
     
-    # Get filters for dropdowns
-    doctors = Doctor.objects.filter(is_active=True)
+    # Get filters for dropdowns (include inactive doctors too)
+    doctors = Doctor.objects.all().order_by('first_name', 'last_name')
     status_choices = Appointment.STATUS_CHOICES
     
     context = {

@@ -77,6 +77,9 @@
                             Specialization <span class="text-red-500">*</span>
                         </label>
                         {{ form.specialization }}
+                        {% if form.specialization.help_text %}
+                            <p class="text-xs text-gray-500 mt-1">{{ form.specialization.help_text }}</p>
+                        {% endif %}
                         {% if form.specialization.errors %}
                             <div class="text-red-500 text-sm mt-1">{{ form.specialization.errors.0 }}</div>
                         {% endif %}
@@ -222,9 +225,15 @@
                         Slots
                     </label>
                     {{ form.time_slots }}
-                    <p class="text-gray-500 text-sm mt-1">
-                        Enter time slots separated by commas. Use 24-hour format e.g. 09:00,10:30,14:00
-                    </p>
+                    <p class="text-gray-500 text-sm mt-1">{{ form.time_slots.help_text }}</p>
+                    <div class="mt-2 flex flex-wrap gap-2">
+                        <button type="button" class="slot-pill px-2 py-1 text-xs rounded bg-blue-50 text-blue-700 border border-blue-200" data-time="09:00">09:00</button>
+                        <button type="button" class="slot-pill px-2 py-1 text-xs rounded bg-blue-50 text-blue-700 border border-blue-200" data-time="09:30">09:30</button>
+                        <button type="button" class="slot-pill px-2 py-1 text-xs rounded bg-blue-50 text-blue-700 border border-blue-200" data-time="10:00">10:00</button>
+                        <button type="button" class="slot-pill px-2 py-1 text-xs rounded bg-blue-50 text-blue-700 border border-blue-200" data-time="14:00">14:00</button>
+                        <button type="button" class="slot-pill px-2 py-1 text-xs rounded bg-blue-50 text-blue-700 border border-blue-200" data-time="14:30">14:30</button>
+                        <button type="button" class="slot-pill px-2 py-1 text-xs rounded bg-blue-50 text-blue-700 border border-blue-200" data-time="15:00">15:00</button>
+                    </div>
                     {% if form.time_slots.errors %}
                         <div class="text-red-500 text-sm mt-1">{{ form.time_slots.errors.0 }}</div>
                     {% endif %}
@@ -256,4 +265,25 @@
     </div>
 </div>
 
+<script>
+    (function () {
+        const slotInput = document.getElementById("{{ form.time_slots.id_for_label }}");
+        const pills = document.querySelectorAll(".slot-pill");
+        if (!slotInput || !pills.length) return;
+
+        pills.forEach((pill) => {
+            pill.addEventListener("click", () => {
+                const value = pill.getAttribute("data-time");
+                const current = slotInput.value
+                    .split(",")
+                    .map((v) => v.trim())
+                    .filter(Boolean);
+                if (!current.includes(value)) {
+                    current.push(value);
+                }
+                slotInput.value = current.join(",");
+            });
+        });
+    })();
+</script>
 {% endblock %}

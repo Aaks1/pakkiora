@@ -353,7 +353,7 @@ def cancel_appointment(request, appointment_id):
             appointment.save()
 
         messages.success(request, "Appointment cancelled successfully.")
-        return redirect('patient:dashboard')
+        return redirect('patient:past_appointments')
 
     return render(request, 'patient/appointments/cancel.html', {
         'appointment': appointment
@@ -373,8 +373,16 @@ def change_password(request):
             update_session_auth_hash(request, user)
             messages.success(request, "Password updated successfully.")
             return redirect('patient:profile')
+        messages.error(request, "Please fix the errors below and try again.")
     else:
         form = PasswordChangeForm(request.user)
+
+    # Apply consistent UI classes to password fields.
+    for field_name in ['old_password', 'new_password1', 'new_password2']:
+        if field_name in form.fields:
+            form.fields[field_name].widget.attrs.update({
+                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500',
+            })
 
     return render(request, 'patient/change_password.html', {
         'form': form

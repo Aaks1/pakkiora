@@ -35,8 +35,20 @@
         <tbody>
         {% for appointment in appointments %}
             <tr class="border-t">
-                <td class="p-3">{{ appointment.patient.username }}</td>
-                <td class="p-3">Dr. {{ appointment.doctor.first_name }} {{ appointment.doctor.last_name }}</td>
+                <td class="p-3">
+                    {% if appointment.patient %}
+                        {{ appointment.patient.get_full_name|default:appointment.patient.username }}
+                    {% else %}
+                        <span class="text-gray-500">Unknown patient</span>
+                    {% endif %}
+                </td>
+                <td class="p-3">
+                    {% if appointment.doctor %}
+                        Dr. {{ appointment.doctor.first_name }} {{ appointment.doctor.last_name }}
+                    {% else %}
+                        <span class="text-gray-500">Unknown doctor</span>
+                    {% endif %}
+                </td>
                 <td class="p-3">{{ appointment.date }}</td>
                 <td class="p-3">{{ appointment.start_time }}</td>
                 <td class="p-3">{{ appointment.status }}</td>

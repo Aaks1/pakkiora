@@ -1,29 +1,29 @@
 from django import forms
-from django.core.validators import EmailValidator, RegexValidator
 from django.contrib.auth.models import User
 from .models import Doctor, Patient
 
 
 class AddDoctorForm(forms.ModelForm):
     """Form for adding doctor profile and schedule only."""
+    SPECIALIZATION_CHOICES = [
+        ('', 'Select Specialization'),
+        ('Cardiology', 'Cardiology'),
+        ('Neurology', 'Neurology'),
+        ('Orthopedics', 'Orthopedics'),
+        ('Pediatrics', 'Pediatrics'),
+        ('Psychiatry', 'Psychiatry'),
+        ('Radiology', 'Radiology'),
+        ('Surgery', 'Surgery'),
+        ('General Practice', 'General Practice'),
+        ('Dermatology', 'Dermatology'),
+        ('Ophthalmology', 'Ophthalmology'),
+        ('ENT', 'ENT'),
+        ('Gynecology', 'Gynecology'),
+    ]
     
     # Doctor Details
     specialization = forms.ChoiceField(
-        choices=[
-            ('', 'Select Specialization'),
-            ('Cardiology', 'Cardiology'),
-            ('Neurology', 'Neurology'),
-            ('Orthopedics', 'Orthopedics'),
-            ('Pediatrics', 'Pediatrics'),
-            ('Psychiatry', 'Psychiatry'),
-            ('Radiology', 'Radiology'),
-            ('Surgery', 'Surgery'),
-            ('General Practice', 'General Practice'),
-            ('Dermatology', 'Dermatology'),
-            ('Ophthalmology', 'Ophthalmology'),
-            ('ENT', 'ENT'),
-            ('Gynecology', 'Gynecology'),
-        ],
+        choices=SPECIALIZATION_CHOICES,
         widget=forms.Select(attrs={'class': 'form-control', 'required': True})
     )
     
@@ -61,14 +61,14 @@ class AddDoctorForm(forms.ModelForm):
         widgets = {
             'first_name': forms.TextInput(attrs={'class': 'form-control', 'required': True}),
             'last_name': forms.TextInput(attrs={'class': 'form-control', 'required': True}),
-            'email': forms.EmailInput(attrs={'class': 'form-control', 'required': True}),
-            'phone': forms.TextInput(attrs={'class': 'form-control', 'required': True}),
-            'address': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
-            'qualification': forms.TextInput(attrs={'class': 'form-control', 'required': True}),
+            'email': forms.EmailInput(attrs={'class': 'form-control', 'required': True, 'placeholder': 'doctor@clinic.com'}),
+            'phone': forms.TextInput(attrs={'class': 'form-control', 'required': True, 'placeholder': '9876543210'}),
+            'address': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Clinic address'}),
+            'qualification': forms.TextInput(attrs={'class': 'form-control', 'required': True, 'placeholder': 'MD, MS, MBBS, etc.'}),
             'experience_years': forms.NumberInput(attrs={'class': 'form-control', 'min': 0}),
-            'license_number': forms.TextInput(attrs={'class': 'form-control', 'required': True}),
+            'license_number': forms.TextInput(attrs={'class': 'form-control', 'required': True, 'placeholder': 'MED-REG-12345'}),
             'department': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. Cardiac Care'}),
-            'bio': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
+            'bio': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Short professional bio'}),
         }
     
     def __init__(self, *args, **kwargs):
@@ -89,19 +89,48 @@ class AddDoctorForm(forms.ModelForm):
         self.fields['first_name'].required = True
         self.fields['last_name'].required = True
         self.fields['email'].required = True
+        self.fields['phone'].required = True
+        self.fields['license_number'].required = True
         self.fields['specialization'].required = True
+        self.fields['email'].help_text = 'Must be unique across doctors.'
+        self.fields['license_number'].help_text = 'Use official medical registration number.'
+        self.fields['available_days'].help_text = 'Select at least one recurring day.'
+        self.fields['time_slots'].help_text = 'Comma-separated 24h times, for example: 09:00,09:30,10:00'
+
+    def clean_email(self):
+        email = (self.cleaned_data.get('email') or '').strip().lower()
+        if Doctor.objects.filter(email__iexact=email).exists():
+            raise forms.ValidationError('A doctor with this email already exists.')
+        return email
+
+    def clean_license_number(self):
+        license_number = (self.cleaned_data.get('license_number') or '').strip()
+        if Doctor.objects.filter(license_number__iexact=license_number).exists():
+            raise forms.ValidationError('A doctor with this license number already exists.')
+        return license_number
+
+    def clean_available_days(self):
+        days = self.cleaned_data.get('available_days') or []
+        if not days:
+            raise forms.ValidationError('Please select at least one available day.')
+        return days
     
     def clean_time_slots(self):
         time_slots = self.cleaned_data.get('time_slots', '')
         if time_slots:
             slots = [s.strip() for s in time_slots.split(',') if s.strip()]
+            parsed = []
             for slot in slots:
                 try:
                     from datetime import datetime
-                    datetime.strptime(slot, '%H:%M')
+                    parsed_time = datetime.strptime(slot, '%H:%M').time()
+                    parsed.append(parsed_time.strftime('%H:%M'))
                 except ValueError:
                     raise forms.ValidationError(f'Invalid time format: "{slot}". Use HH:MM format e.g. 09:00')
-        return time_slots
+            # Keep a clean, sorted, de-duplicated slot list.
+            unique_sorted = sorted(set(parsed))
+            return ','.join(unique_sorted)
+        raise forms.ValidationError('Please provide at least one time slot.')
     
     def save(self, commit=True):
         # Create doctor profile
