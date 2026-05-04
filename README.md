@@ -155,7 +155,7 @@ Key models include:
 
 ## 📄 License
 
-This project is proprietary software for Piki Ora Medical Centre.
+This project is proprietary software of Naveen's Medical Centre.
 
 ## 🤝 Contributing
 
